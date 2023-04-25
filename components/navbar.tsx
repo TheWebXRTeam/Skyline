@@ -96,7 +96,7 @@ const Navbar = (props) => {
         <Group spacing={5} className={classes.links}>
 
           <Link
-            href="https://github.com/linkto/ourcode"
+            href="https://github.com/lalalune/ratk-webxr-starter"
             scroll={false}
             passHref
           >
