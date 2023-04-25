@@ -2,10 +2,13 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import { faVrCardboard } from "@fortawesome/free-solid-svg-icons";
 import { Box as ContainerBox } from "@mantine/core";
+import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Controllers, XR } from "@react-three/xr";
+import { Controllers, Interactive, XR } from "@react-three/xr";
 import { RealityAccelerator } from 'ratk';
-import { useEffect, useRef } from "react";
+import { RefObject, useEffect, useRef } from "react";
+import { BackSide, IcosahedronGeometry, Mesh } from "three";
+import { Avatar } from '../components/Avatar';
 import CustomVRButton from "../components/VRButton";
 import Layout from "../components/layouts/article";
 
@@ -72,6 +75,8 @@ const App = () => {
             <color attach="background" args={[0x090c17]} />
             <hemisphereLight color={0x606060} groundColor={0x404040} />
             <directionalLight position={[1, 1, 1]} color={0xffffff} />
+            <OrbitControls target={[0, 1.6, 0]} />
+              <Avatar />
           </XR>
         </Canvas>
       </ContainerBox>
