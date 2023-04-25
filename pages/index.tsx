@@ -7,7 +7,8 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Controllers, Interactive, XR } from "@react-three/xr";
 import { RealityAccelerator } from 'ratk';
 import { RefObject, useRef } from "react";
-import { BackSide, IcosahedronBufferGeometry, Mesh } from "three";
+import { BackSide, IcosahedronGeometry, Mesh } from "three";
+import { Avatar } from '../components/Avatar';
 import CustomVRButton from "../components/VRButton";
 import Layout from "../components/layouts/article";
 
@@ -42,7 +43,7 @@ const Icosahedrons = ({
   const radius = 0.08;
   const numInstances = 200;
 
-  const geometry = new IcosahedronBufferGeometry(radius, 2);
+  const geometry = new IcosahedronGeometry(radius, 2);
 
   const random = (min: number, max: number) =>
     Math.random() * (max - min) + min;
@@ -50,7 +51,7 @@ const Icosahedrons = ({
   const icosahedrons = Array.from({ length: numInstances }, (_, i) => (
     <mesh
       key={i}
-      position={[random(-2, 2), random(1, 2.5), random(-2, 2)]}
+      position={[random(-2, 2), random(.5, 2), random(-2, 2)]}
       geometry={geometry}
     >
       <meshLambertMaterial color={Math.random() * 0xffffff} />
@@ -278,7 +279,7 @@ const App = () => {
   }
 
   return (
-    <Layout title="Bluesky Agent">
+    <Layout title="Social Agent">
       <ContainerBox
         ref={containerRef}
         style={{
@@ -319,6 +320,10 @@ const App = () => {
             />
             <Highlight highlightRef={rightHighlight} />
             <Highlight highlightRef={leftHighlight} />
+
+            {/* <Physics colliders="hull"> */}
+              <Avatar />
+             {/* </Physics> */}
           </XR>
         </Canvas>
       </ContainerBox>

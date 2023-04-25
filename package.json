@@ -13,6 +13,7 @@
     "@mantine/ds": "^5.10.4",
     "@mantine/hooks": "^5.10.4",
     "@mantine/next": "^5.10.4",
+    "@pixiv/three-vrm": "^1.0.9",
     "@react-three/drei": "^9.56.25",
     "@react-three/fiber": "^8.3.1",
     "@react-three/xr": "^5.4.1",
@@ -22,7 +23,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^4.7.1",
-    "three": "^0.142.0"
+    "three": "^0.149.0",
+    "zustand": "^4.3.3"
   },
   "scripts": {
     "dev": "next dev",
@@ -33,7 +35,7 @@
   "devDependencies": {
     "@types/node": "^18.6.1",
     "@types/react": "^18.0.15",
-    "@types/three": "^0.142.0",
+    "@types/three": "^0.149.0",
     "typescript": "^4.7.4"
   }
 }
