@@ -101,20 +101,6 @@ const App = () => {
   const isRightSelectPressed = useRef(false);
 
   const isLeftSelectPressed = useRef(false);
-
-  // THESE ARE THE REFERENCES TO THE THREE.JS STUF
-  const { gl, scene, camera, xr } = useThree();
-
-  useEffect(() => {
-    console.log('three.js stuff happening')
-
-    // WRITE THREE.JS CODE HERE
-
-    console.log("three.js scene is", scene)
-
-    console.log('three.js renderer is', gl)
-
-  }, [])
   
   const onSelectStart = (event: any) => {
     const selectedObject = event.intersections[0]?.object;
@@ -293,12 +279,26 @@ const App = () => {
   const RatkScene = () => {
 
     // get a reference to the react-three-fiber renderer
-    const { gl, scene } = useThree();
+    // THESE ARE THE REFERENCES TO THE THREE.JS STUFF
+
+    const { gl, scene, camera, xr } = useThree();
     const ratkObject = new RealityAccelerator(gl.xr);
     scene.add(ratkObject.root); 
-    useFrame((state, delta) => {
-      ratkObject.update();
-    });
+
+
+  useEffect(() => {
+    // WRITE THREE.JS CODE HERE
+
+    console.log("three.js scene is", scene)
+
+    console.log('three.js renderer is', gl)
+
+  }, [])
+
+  // 
+  useFrame((state, delta) => {
+    ratkObject.update();
+  });
   
     return <></>;
   }
