@@ -14,7 +14,7 @@ export const Avatar = () => {
     avatarInitPos,
     setAvatarVrm,
   } = useZustand()
-  const avatarVrm = useVrm('/models/avatar2.vrm')
+  const avatarVrm = useVrm('/models/avatar1.vrm')
   customDebug().log('Avatar: avatarVrm: ', avatarVrm)
 
   const fbx = useFBX('/models/magic idle.fbx')
