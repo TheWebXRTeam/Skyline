@@ -9,6 +9,7 @@ import { RealityAccelerator } from 'ratk';
 import { RefObject, useRef } from "react";
 import { BackSide, IcosahedronGeometry, Mesh } from "three";
 import { Avatar } from '../components/Avatar';
+import LoginForm from '../components/Login';
 import CustomVRButton from "../components/VRButton";
 import Layout from "../components/layouts/article";
 
@@ -293,6 +294,8 @@ const App = () => {
           alignItems: "center",
         }}
       >
+		<LoginForm
+		/>
         <CustomVRButton />
         <Canvas
           camera={{
