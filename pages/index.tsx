@@ -6,7 +6,7 @@ import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Controllers, Interactive, XR } from "@react-three/xr";
 import { RealityAccelerator } from 'ratk';
-import { RefObject, useRef } from "react";
+import { RefObject, useEffect, useRef } from "react";
 import { BackSide, IcosahedronGeometry, Mesh } from "three";
 import { Avatar } from '../components/Avatar';
 import CustomVRButton from "../components/VRButton";
@@ -41,7 +41,7 @@ const Icosahedrons = ({
   onSelectMissed: (event: any) => void;
 }) => {
   const radius = 0.08;
-  const numInstances = 200;
+  const numInstances = 60;
 
   const geometry = new IcosahedronGeometry(radius, 2);
 
@@ -57,6 +57,17 @@ const Icosahedrons = ({
       <meshLambertMaterial color={Math.random() * 0xffffff} />
     </mesh>
   ));
+
+  const arrayOfCubes = Array.from({ length: numInstances }, (_, i) => (
+    <mesh
+      key={i}
+      position={[random(-2, 2), random(.5, 2), random(-2, 2)]}
+      geometry={geometry}
+    >
+      <meshLambertMaterial color={Math.random() * 0xffffff} />
+    </mesh>
+  ));
+
 
   return (
     <>
@@ -90,6 +101,20 @@ const App = () => {
   const isRightSelectPressed = useRef(false);
 
   const isLeftSelectPressed = useRef(false);
+
+  // THESE ARE THE REFERENCES TO THE THREE.JS STUF
+  const { gl, scene, camera, xr } = useThree();
+
+  useEffect(() => {
+    console.log('three.js stuff happening')
+
+    // WRITE THREE.JS CODE HERE
+
+    console.log("three.js scene is", scene)
+
+    console.log('three.js renderer is', gl)
+
+  }, [])
   
   const onSelectStart = (event: any) => {
     const selectedObject = event.intersections[0]?.object;
@@ -271,7 +296,7 @@ const App = () => {
     const { gl, scene } = useThree();
     const ratkObject = new RealityAccelerator(gl.xr);
     scene.add(ratkObject.root); 
-    useFrame(({ gl, scene, camera }) => {
+    useFrame((state, delta) => {
       ratkObject.update();
     });
   
