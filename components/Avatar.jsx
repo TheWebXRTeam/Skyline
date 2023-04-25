@@ -14,10 +14,10 @@ export const Avatar = () => {
     avatarInitPos,
     setAvatarVrm,
   } = useZustand()
-  const avatarVrm = useVrm('/models/avatar1.vrm')
+  const avatarVrm = useVrm('/models/pixel.vrm')
   customDebug().log('Avatar: avatarVrm: ', avatarVrm)
 
-  const fbx = useFBX('/models/magic idle.fbx')
+  const fbx = useFBX('/models/idle.fbx')
   customDebug().log('Avatar: fbx: ', fbx)
 
   const { mixer, mixamoClip } = useVrmMixamoAnimations(avatarVrm, fbx.animations, [WATCH_BONE_NAME])
