@@ -3,7 +3,7 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 import { faVrCardboard } from "@fortawesome/free-solid-svg-icons";
 import { Box as ContainerBox } from "@mantine/core";
 import { OrbitControls, Stats } from "@react-three/drei";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
 import { Controllers, Hands, Interactive, XR, XRButton } from "@react-three/xr";
 
 import { Text } from "@react-three/drei";
@@ -11,6 +11,7 @@ import { RealityAccelerator } from 'ratk';
 import { RefObject, useEffect, useRef } from "react";
 import { BackSide, IcosahedronGeometry, Mesh } from "three";
 import LoginForm from '../components/Login';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 // import AR button from react three xr
 import Layout from "../components/layouts/article";
 import { useLocalStorage } from '../components/useLocalStorage';
@@ -37,7 +38,7 @@ const Balls = ({
 	onBlur,
 	onSelectMissed,
   }) => {
-	const [feedData, setFeedData] = useLocalStorage('feedData', null);
+	const [feedData, setFeedData] = useLocalStorage("feedData", null);
 	useEffect(() => {
 	  if (feedData) {
 		console.log("Feed data in index", feedData);
@@ -48,31 +49,48 @@ const Balls = ({
   
 	const geometry = new IcosahedronGeometry(radius, 2);
   
-	const random = (min, max) =>
-	  Math.random() * (max - min) + min;
+	const random = (min, max) => Math.random() * (max - min) + min;
 	// load a gltf file to be used as geometry
-	// const gltf = useLoader(GLTFLoader, '/scene.gltf');
-
-	const balls = !feedData ? [] : feedData.map((item, i) => (
-	  <mesh
-		key={i}
-		position={[random(-2, 2), random(0.1, 1), random(-2, 2)]}
-		geometry={geometry}
-	  >
-		<meshLambertMaterial color={Math.random() * 0xffffff} />
-		<Text
-      fontSize={0.1}
-      position={[0, 0, 0]}
-      color="white"
-      anchorX="center"
-      anchorY="middle"
-      outlineWidth={0.01}
-      outlineColor="black"
-    >
-      {item.post.record.text}
-    </Text>
-	  </mesh>
-	));
+	const gltf = useLoader(GLTFLoader, "butterfly.glb");
+  
+	const balls = !feedData
+	  ? []
+	  : feedData.map((item, i) => {
+		  // instance the gltf file to be used as geometry for each item
+		  const butterfly = gltf.scene.clone();
+		  // copy animation clips to butterfly
+		  butterfly.animations = gltf.animations;
+		  // randomize the color of the butterfly
+		  butterfly.traverse((child) => {
+			if (child instanceof Mesh) {
+					child.material.color.setHex(Math.random() * 0xffffff);
+			}
+		});
+		  
+		  
+		  return (
+			<group position={[random(-2, 2), random(0.1, 1), random(-2, 2)]}>
+			  <Text
+				fontSize={0.06}
+				position={[0, 0, 0]}
+				color="white"
+				anchorX="center"
+				anchorY="middle"
+				outlineWidth={0.01}
+				outlineColor="black"
+			  >
+				{item.post.record.text}
+			  </Text>
+			  {/* add cube to the scene */}
+			  <primitive
+				key={i}
+				scale={[0.08, 0.08, 0.08]}
+				position={[0, 0, 0]}
+				object={butterfly}
+			  />
+			</group>
+		  );
+		});
   
 	return (
 	  <>
@@ -91,7 +109,7 @@ const Balls = ({
 	  </>
 	);
   };
-  
+	
 const App = () => {
   
   const containerRef = useRef<HTMLDivElement>(null);
@@ -109,6 +127,7 @@ const App = () => {
   const isLeftSelectPressed = useRef(false);
   
   const onSelectStart = (event: any) => {
+
     const selectedObject = event.intersections[0]?.object;
 
     const controller = event.target;
