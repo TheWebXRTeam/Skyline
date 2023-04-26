@@ -15,9 +15,6 @@ import {
 function LoginForm() {
   const [username, setUsername] = useLocalStorage("userName", null);
   const [password, setPassword] = useState("");
-
-  const [setup, setSetup] = useState(false);
-
   const [sessionData, setSessionData] = useLocalStorage("sessionData", null);
   const [feedData, setFeedData] = useLocalStorage("feedData", null);
   
@@ -35,7 +32,6 @@ function LoginForm() {
 	} else if(!feedData) {
 		handleTimeline();
 	}
-
   }, [feedData, sessionData]);
 
   const handleSubmit = async (e) => {
@@ -70,7 +66,6 @@ function LoginForm() {
 
   return (
     <>
-      {!setup && (
         <Container size={420} my={40} style={{ marginTop: "5em" }}>
           <Title
             align="center"
@@ -81,7 +76,7 @@ function LoginForm() {
           >
             <img src={"skyline.png"} alt="Skyline" style={{ width: "100%" }} />
           </Title>
-          {!username || !sessionData ? (
+          {!username || !sessionData || !feedData ? (
             <Paper withBorder shadow="md" p={30} mt={30} radius="md">
               <TextInput
                 label="Username"
@@ -103,6 +98,7 @@ function LoginForm() {
               </Button>
             </Paper>
           ) : (
+			<>
 			  <XRButton
               /* The type of `XRSession` to create */
               mode={'AR'}
@@ -110,12 +106,13 @@ function LoginForm() {
 				// remove default button styles
 				background: '#228be6',
 				border: 'none',
-				padding: '.75em 1.25em',
+				padding: '.5em 18px',
+				width: '100%',
 				font: 'inherit',
 				outline: 'inherit',
 				color: 'white',
 				// add rounded corners
-				borderRadius: '0.75em',
+				borderRadius: '4px',
 				// indicate this is a button
 				cursor: 'pointer',
               }}
@@ -128,9 +125,20 @@ function LoginForm() {
               {/* Can accept regular DOM children and has an optional callback with the XR button status (unsupported, exited, entered) */}
               Continue as {username}
               </XRButton>
+			  {/* add logout button */}
+			  <Button fullWidth onClick={() => {
+				  setUsername(null);
+				  setSessionData(null);
+				  setFeedData(null);
+			  }} mt="xl"
+			// make this button have a border but no background
+			variant="outline"
+			  >
+				Sign out
+			  </Button>
+			  </>
           )}
         </Container>
-      )}
     </>
   );
 }
