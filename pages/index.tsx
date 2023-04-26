@@ -134,7 +134,12 @@ const Balls = ({
 			gltf.animations.forEach((animation) => {
 			mixer.clipAction(animation).play();
 			});
-		}			
+		}
+
+		//useframe to update the animation mixer
+		useFrame((state, delta) => {
+			mixer.update(delta);
+		});
 
 			const profilepic = pfp.scene.clone();
 
