@@ -6,6 +6,7 @@ import { Box as ContainerBox } from "@mantine/core";
 import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Controllers, Hands, Interactive, XR } from "@react-three/xr";
+import * as THREE from "three";
 
 import { Text } from "@react-three/drei";
 import { RealityAccelerator } from "ratk";
@@ -44,6 +45,9 @@ const Balls = ({
 	onSelectMissed,
   }) => {
 	const [feedData, setFeedData] = useLocalStorage("feedData", null);
+
+	const { scene } = useThree();
+
 	useEffect(() => {
 	  if (feedData) {
 		console.log("Feed data in index", feedData);
@@ -63,11 +67,43 @@ const Balls = ({
     }
   });
 
+
+  // Randomly trigger a butterfly to move. i.e. set userData.targetPosition
+  useFrame((state, delta) => {
+    const ratk = scene.getObjectByName("ratk");
+    if (!ratk) return;
+
+    const planes = ratk.children
+    if (planes.length === 0) return;
+
+    for (let i = 0; i < groups.length; i++) {
+      if (Math.random() * 1000 > 1) continue; 
+
+      const planeIndex = Math.floor(Math.random() * planes.length);
+
+      // ugly hack. sometimes the plane position is created, but matrixWorld is not updated yet. so skip
+      const zeroPos = new THREE.Vector3(0, 0, 0);
+      zeroPos.applyMatrix4(planes[planeIndex].matrixWorld);
+      if (zeroPos.x == 0 && zeroPos.y == 0 && zeroPos.z == 0) return; 
+
+      const planeHeight = planes[planeIndex].boundingRectangleHeight;
+      const planeWidth = planes[planeIndex].boundingRectangleWidth;
+
+      const posX = Math.random() * planeWidth - planeWidth/2;
+      const posZ = Math.random() * planeHeight - planeHeight/2;
+
+      const pos = new THREE.Vector3(posX, 0, posZ);
+
+      pos.applyMatrix4(planes[planeIndex].matrixWorld);
+
+      groups[i].userData.targetPosition = new Vector3(pos.x, pos.y, pos.z);
+    }
+  });
   
 	const random = (min, max) => Math.random() * (max - min) + min;
 	// load a gltf file to be used as geometry
 	const gltf = useLoader(GLTFLoader, "butterfly.glb");
-  
+
 	const balls = !feedData
 	  ? []
 	  : feedData.map((item, i) => {
@@ -95,7 +131,20 @@ const Balls = ({
         
   
         groupRef.current.update = (d)=>{
-          console.log('update')
+	  const targetPosition = groupRef.current.userData.targetPosition;
+	  if (!targetPosition) return; 
+
+	  const currentPosition = groupRef.current.position;
+	  const dir = new Vector3();
+	  dir.subVectors( targetPosition, currentPosition ).normalize();
+	  const newPos = new Vector3(currentPosition.x, currentPosition.y, currentPosition.z);
+	  newPos.addScaledVector(dir, 0.1);
+
+	  groupRef.current.position.set(newPos.x, newPos.y, newPos.z);
+
+	  if (targetPosition.distanceTo(newPos) < 0.1) {
+	    groupRef.current.userData.targetPosition = null;
+	  }
         }
   
         groupRef.current.run = (d)=>{
@@ -343,10 +392,27 @@ const App = () => {
     // THESE ARE THE REFERENCES TO THE THREE.JS STUFF
 
     const { gl, scene, camera, xr } = useThree();
-    const ratkObject = new RealityAccelerator(gl.xr);
-    scene.add(ratkObject.root);
+
+    let ratkObject = null;
 
     useEffect(() => {
+
+      ratkObject = new RealityAccelerator(gl.xr);
+      ratkObject.root.name = "ratk";
+
+      scene.add(ratkObject.root);
+      /*
+      ratkObject.onPlaneAdded = (plane) => {
+	const mesh = plane.planeMesh;
+	mesh.material = new THREE.MeshBasicMaterial({
+	  transparent: true,
+	  opacity: 0.9,
+	  color: Math.random() * 0xffffff,
+	  side: THREE.DoubleSide,
+	});
+      };
+      */
+
       // WRITE THREE.JS CODE HERE
 
       console.log("three.js scene is", scene);
@@ -358,8 +424,9 @@ const App = () => {
     useFrame((state, delta) => {
       //GLOBAL tick update
 
-
-      ratkObject.update();
+      if (ratkObject) {
+	ratkObject.update();
+      }
     });
 
     return <></>;
