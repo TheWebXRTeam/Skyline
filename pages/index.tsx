@@ -16,6 +16,8 @@ import dynamic from "next/dynamic";
 const LoginForm = dynamic(() => import("../components/Login"), { ssr: false });
 
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+// import skeletonutils
+import { clone } from 'three/examples/jsm/utils/SkeletonUtils';
 // import AR button from react three xr
 import Layout from "../components/layouts/article";
 import { useLocalStorage } from "../components/useLocalStorage";
@@ -113,14 +115,27 @@ const Balls = ({
 	// load a gltf file to be used as geometry
 	const gltf = useLoader(GLTFLoader, "butterfly.glb");
 	const pfp = useLoader(GLTFLoader, "profilepic.glb");
-
+	const mixers = [];
+	const clock = new THREE.Clock();
+	
 	const balls = !feedData
 		? []
 		: feedData.map((item, i) => {
 			const uniqueKey = `${item.post.author.displayName}-${i}`;
+		
+		const butterfly = clone(gltf.scene);
+		console.log("gltfbutterfly", butterfly);
 
-			// instance the gltf file to be used as geometry for each item
-			const butterfly = gltf.scene.clone();
+		// Clone animations and setup the mixer
+		const mixer = new THREE.AnimationMixer(butterfly);
+		mixers.push(mixer);
+
+		if (gltf.animations && gltf.animations.length > 0) {
+			gltf.animations.forEach((animation) => {
+			mixer.clipAction(animation).play();
+			});
+		}			
+
 			const profilepic = pfp.scene.clone();
 
 			butterfly.animations = gltf.animations;
