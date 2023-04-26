@@ -328,7 +328,7 @@ const App = () => {
   };
 
   return (
-    <Layout title="Social Agent">
+    <Layout title="Skyline">
       <ContainerBox
         ref={containerRef}
         style={{
