@@ -5,11 +5,12 @@ import { Box as ContainerBox } from "@mantine/core";
 import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Controllers, Hands, Interactive, XR } from "@react-three/xr";
+import * as THREE from "three";
 
 import { Text } from "@react-three/drei";
 import { RealityAccelerator } from "ratk";
-import { RefObject, useEffect, useRef } from "react";
-import { BackSide, IcosahedronGeometry, Mesh, Vector3 } from "three";
+import { RefObject, useEffect, useRef, useState } from "react";
+import { BackSide, IcosahedronGeometry, Mesh } from "three";
 // import next/dynamic and dynamically load LoginForm instead
 import dynamic from "next/dynamic";
 const LoginForm = dynamic(() => import("../components/Login"), { ssr: false });
@@ -21,7 +22,6 @@ import { useLocalStorage } from "../components/useLocalStorage";
 
 library.add(faVrCardboard);
 
-const TWO_PI = 6.28318530718;
 interface HighlightProps {
   highlightRef: RefObject<Mesh>;
 }
@@ -34,6 +34,49 @@ const Highlight = ({ highlightRef }: HighlightProps) => {
     </mesh>
   );
 };
+const useFetchTextureLoader = (url, loading) => {
+  const [texture, setTexture] = useState(null);
+
+  useEffect(() => {
+    const loadTexture = async () => {
+      try {
+        const apiUrl = "/api/image-proxy"; // Change this to match your API route
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ url: url }),
+        });
+        const jsonResponse = await response.json();
+        const base64Image = jsonResponse.base64Image;
+        const binaryImage = atob(base64Image.split(",")[1]);
+        const arrayBuffer = new ArrayBuffer(binaryImage.length);
+        const uint8Array = new Uint8Array(arrayBuffer);
+
+        for (let i = 0; i < binaryImage.length; i++) {
+          uint8Array[i] = binaryImage.charCodeAt(i);
+        }
+
+        const blob = new Blob([uint8Array], { type: "image/jpeg" });
+        const newUrl = URL.createObjectURL(blob);
+        const newTexture = new THREE.TextureLoader().load(newUrl, () => {
+          loading.current = false;
+        });
+
+        setTexture(newTexture);
+      } catch (error) {
+        console.error("Error loading texture:", error);
+      }
+    };
+
+    if (url) {
+      loadTexture();
+    }
+  }, [url]);
+
+  return texture;
+};
 
 const Balls = ({
   onSelectStart,
@@ -43,15 +86,10 @@ const Balls = ({
   onSelectMissed,
 }) => {
   const [feedData, setFeedData] = useLocalStorage("feedData", null);
-  useEffect(() => {
-    if (feedData) {
-      console.log("Feed data in index", feedData);
-    }
-  }, [feedData]);
-
   const radius = 0.08;
 
-  const geometry = new IcosahedronGeometry(radius, 2);
+  const random = (min, max) => Math.random() * (max - min) + min;
+
   const groups = [];
 
   useFrame((state, delta) => {
@@ -62,24 +100,34 @@ const Balls = ({
     }
   });
 
-  const random = (min, max) => Math.random() * (max - min) + min;
+  const loading = useRef(true);
+  loading.current = false; // Set the loading state to false after the image has loaded
+
+  const geometry = new IcosahedronGeometry(radius, 2);
+
   // load a gltf file to be used as geometry
   const gltf = useLoader(GLTFLoader, "butterfly.glb");
+  const pfp = useLoader(GLTFLoader, "profilepic.glb");
 
   const balls = !feedData
     ? []
     : feedData.map((item, i) => {
+        const uniqueKey = `${item.post.author.displayName}-${i}`;
+
         // instance the gltf file to be used as geometry for each item
         const butterfly = gltf.scene.clone();
-        // copy animation clips to butterfly
+        const profilepic = pfp.scene.clone();
+
         butterfly.animations = gltf.animations;
 
-        const groupRef = useRef();
+        const groupRef = useRef(null) as any;
 
         useEffect(() => {
+          if (!groupRef.current) return;
           groups.push(groupRef.current);
           // randomize the color of the butterfly
-          groupRef.current.init = () => {
+          (groupRef.current as any).init = () => {
+            if (!groupRef.current) return console.log("could not init");
             groupRef.current.position.set(
               random(-2, 2),
               random(0.1, 1),
@@ -104,26 +152,84 @@ const Balls = ({
           groupRef.current.init();
         }, []);
 
+        profilepic.traverse((child) => {
+          if (child instanceof Mesh) {
+            child.material.color.setHex(Math.random() * 0xffffff);
+          }
+        });
+
+        // randomize the color of the butterfly
+        butterfly.traverse((child) => {
+          if (child instanceof Mesh) {
+            child.material.color.setHex(Math.random() * 0xffffff);
+          }
+        });
+        const likeCount = item?.post?.likeCount;
+        const pfpGeometry = profilepic.children[0].geometry;
+        console.log("pfpGeometry", pfpGeometry);
+        const base64Texture = useFetchTextureLoader(
+          item?.post?.author.avatar,
+          loading
+        );
+
         return (
-          <group ref={groupRef}>
-            <Text
-              fontSize={0.06}
-              position={[0, 0, 0]}
-              color="white"
-              anchorX="center"
-              anchorY="middle"
-              outlineWidth={0.01}
-              outlineColor="black"
-            >
-              {item.post.record.text}
-            </Text>
+          <group
+            key={uniqueKey}
+            position={[random(-2, 2), random(0.1, 1), random(-2, 2)]}
+          >
             {/* add cube to the scene */}
             <primitive
-              key={i}
+              key={`${uniqueKey}-primitive`}
               scale={[0.08, 0.08, 0.08]}
               position={[0, 0, 0]}
               object={butterfly}
             />
+            {!base64Texture ? null : (
+              <>
+                <Text
+                  key={`${uniqueKey}-text1`}
+                  position={[0.3, 0, 0]}
+                  fontSize={0.03}
+                  maxWidth={1}
+                  lineHeight={1}
+                  letterSpacing={0.02}
+                  anchorX={2.3}
+                  wrap={0.1}
+                  height={0.1}
+                  color={0x000000}
+                  textAlign={"left"}
+                >
+                  {item?.post?.author?.displayName +
+                    ": " +
+                    item.post.record.text}
+                </Text>
+                <Text
+                  key={`${uniqueKey}-text2`}
+                  position={[2, 0, 0]}
+                  fontSize={0.03}
+                  maxWidth={0.5}
+                  lineHeight={1}
+                  letterSpacing={0.02}
+                  anchorX={2.3}
+                  wrap={0.1}
+                  height={0.1}
+                  color={0x000000}
+                  textAlign={"center"}
+                >
+                  {likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
+                </Text>
+                <mesh
+                  geometry={pfpGeometry}
+                  scale={[0.07, 0.07, 0.07]}
+                  position={[0, 0, 0.04]}
+                >
+                  <meshStandardMaterial
+                    side={THREE.DoubleSide}
+                    map={base64Texture}
+                  />
+                </mesh>
+              </>
+            )}
           </group>
         );
       });
@@ -132,7 +238,7 @@ const Balls = ({
     <>
       {balls.map((ball, index) => (
         <Interactive
-          key={index}
+          key={index + "-interactive"}
           onSelectStart={onSelectStart}
           onSelectEnd={onSelectEnd}
           onHover={onHover}
@@ -353,8 +459,6 @@ const App = () => {
 
     //
     useFrame((state, delta) => {
-      //GLOBAL tick update
-
       ratkObject.update();
     });
 
