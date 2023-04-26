@@ -88,8 +88,17 @@ const Balls = () => {
 
   const { session } = useXR();
 
-  console.log('session', session)
+  useEffect(() => {
+	console.log('session', session);
+	// add event listener for session
+	if (session) {
+		session.addEventListener('select', () => {
+			console.log("something selected")
+		});
+	}
 
+  }, [session]);
+  
   const ratkObject = new RealityAccelerator(gl.xr);
   scene.add(ratkObject.root);
 
