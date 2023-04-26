@@ -188,7 +188,7 @@ const Balls = ({
 				return val
 			}
 			g.hover = (d)=>{
-				g.theta += d*2
+				g.theta += d*0.5
 	
 				let x = g.multichord(g.theta*g.period.x,4,g.phase,g.wanderRadius)
 				let y = g.multichord(g.theta*g.period.y,4,g.phase,g.wanderRadius)
