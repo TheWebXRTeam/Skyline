@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { library } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import { faVrCardboard } from "@fortawesome/free-solid-svg-icons";
@@ -15,14 +14,14 @@ import { BackSide, IcosahedronGeometry, Mesh, Vector3 } from "three";
 import dynamic from "next/dynamic";
 const LoginForm = dynamic(() => import("../components/Login"), { ssr: false });
 
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 // import AR button from react three xr
 import Layout from "../components/layouts/article";
 import { useLocalStorage } from "../components/useLocalStorage";
 
 library.add(faVrCardboard);
 
-const TWO_PI = 6.28318530718
+const TWO_PI = 6.28318530718;
 interface HighlightProps {
   highlightRef: RefObject<Mesh>;
 }
@@ -37,117 +36,116 @@ const Highlight = ({ highlightRef }: HighlightProps) => {
 };
 
 const Balls = ({
-	onSelectStart,
-	onSelectEnd,
-	onHover,
-	onBlur,
-	onSelectMissed,
-  }) => {
-	const [feedData, setFeedData] = useLocalStorage("feedData", null);
-	useEffect(() => {
-	  if (feedData) {
-		console.log("Feed data in index", feedData);
-	  }
-	}, [feedData]);
-  
-	const radius = 0.08;
-  
-	const geometry = new IcosahedronGeometry(radius, 2);
-  const groups = []
+  onSelectStart,
+  onSelectEnd,
+  onHover,
+  onBlur,
+  onSelectMissed,
+}) => {
+  const [feedData, setFeedData] = useLocalStorage("feedData", null);
+  useEffect(() => {
+    if (feedData) {
+      console.log("Feed data in index", feedData);
+    }
+  }, [feedData]);
+
+  const radius = 0.08;
+
+  const geometry = new IcosahedronGeometry(radius, 2);
+  const groups = [];
 
   useFrame((state, delta) => {
     //GLOBAL tick update
-    for(let i = 0; i < groups.length; i++){
-      let bf = groups[i]
-      bf.update()
+    for (let i = 0; i < groups.length; i++) {
+      let bf = groups[i];
+      bf.update();
     }
   });
 
-  
-	const random = (min, max) => Math.random() * (max - min) + min;
-	// load a gltf file to be used as geometry
-	const gltf = useLoader(GLTFLoader, "butterfly.glb");
-  
-	const balls = !feedData
-	  ? []
-	  : feedData.map((item, i) => {
-		  // instance the gltf file to be used as geometry for each item
-		  const butterfly = gltf.scene.clone();
-		  // copy animation clips to butterfly
-		  butterfly.animations = gltf.animations;
+  const random = (min, max) => Math.random() * (max - min) + min;
+  // load a gltf file to be used as geometry
+  const gltf = useLoader(GLTFLoader, "butterfly.glb");
 
-      const groupRef = useRef()
+  const balls = !feedData
+    ? []
+    : feedData.map((item, i) => {
+        // instance the gltf file to be used as geometry for each item
+        const butterfly = gltf.scene.clone();
+        // copy animation clips to butterfly
+        butterfly.animations = gltf.animations;
 
-      useEffect(() => {
-        groups.push(groupRef.current);
-        // randomize the color of the butterfly
-        groupRef.current.init = ()=>{
-          groupRef.current.position.set(random(-2,2),random(0.1,1),random(-2,2))
+        const groupRef = useRef();
 
-          groupRef.current.traverse((child) => {
-            console.log('traversing', child)
-            if (child instanceof Mesh) {
-              // child.material.color.setHex(Math.random() * 0xffffff);
-              //TODO randomize texture for diff bois
-            }
-          })
-          }
-        
-  
-        groupRef.current.update = (d)=>{
-          console.log('update')
-        }
-  
-        groupRef.current.run = (d)=>{
-  
-        }
-  
-        groupRef.current.init()
+        useEffect(() => {
+          groups.push(groupRef.current);
+          // randomize the color of the butterfly
+          groupRef.current.init = () => {
+            groupRef.current.position.set(
+              random(-2, 2),
+              random(0.1, 1),
+              random(-2, 2)
+            );
 
-      }, [])
-      
-		  return (
-			<group ref={groupRef}>
-			  <Text
-				fontSize={0.06}
-				position={[0, 0, 0]}
-				color="white"
-				anchorX="center"
-				anchorY="middle"
-				outlineWidth={0.01}
-				outlineColor="black"
-			  >
-				{item.post.record.text}
-			  </Text>
-			  {/* add cube to the scene */}
-			  <primitive
-				key={i}
-				scale={[0.08, 0.08, 0.08]}
-				position={[0, 0, 0]}
-				object={butterfly}
-			  />
-			</group>
-		  );
-		});
-  
-	return (
-	  <>
-		{balls.map((ball, index) => (
-		  <Interactive
-			key={index}
-			onSelectStart={onSelectStart}
-			onSelectEnd={onSelectEnd}
-			onHover={onHover}
-			onBlur={onBlur}
-			onSelectMissed={onSelectMissed}
-		  >
-			{ball}
-		  </Interactive>
-		))}
-	  </>
-	);
-  };
-	
+            groupRef.current.traverse((child) => {
+              console.log("traversing", child);
+              if (child instanceof Mesh) {
+                // child.material.color.setHex(Math.random() * 0xffffff);
+                //TODO randomize texture for diff bois
+              }
+            });
+          };
+
+          groupRef.current.update = (d) => {
+            console.log("update");
+          };
+
+          groupRef.current.run = (d) => {};
+
+          groupRef.current.init();
+        }, []);
+
+        return (
+          <group ref={groupRef}>
+            <Text
+              fontSize={0.06}
+              position={[0, 0, 0]}
+              color="white"
+              anchorX="center"
+              anchorY="middle"
+              outlineWidth={0.01}
+              outlineColor="black"
+            >
+              {item.post.record.text}
+            </Text>
+            {/* add cube to the scene */}
+            <primitive
+              key={i}
+              scale={[0.08, 0.08, 0.08]}
+              position={[0, 0, 0]}
+              object={butterfly}
+            />
+          </group>
+        );
+      });
+
+  return (
+    <>
+      {balls.map((ball, index) => (
+        <Interactive
+          key={index}
+          onSelectStart={onSelectStart}
+          onSelectEnd={onSelectEnd}
+          onHover={onHover}
+          onBlur={onBlur}
+          onSelectMissed={onSelectMissed}
+        >
+          {ball}
+        </Interactive>
+      ))}
+    </>
+  );
+};
+
 const App = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -164,7 +162,6 @@ const App = () => {
   const isLeftSelectPressed = useRef(false);
 
   const onSelectStart = (event: any) => {
-
     const selectedObject = event.intersections[0]?.object;
 
     const controller = event.target;
@@ -357,7 +354,6 @@ const App = () => {
     //
     useFrame((state, delta) => {
       //GLOBAL tick update
-
 
       ratkObject.update();
     });
