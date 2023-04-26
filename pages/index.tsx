@@ -363,7 +363,7 @@ const App = () => {
           }}
           gl={{ antialias: true }}
         >
-          <XR>
+        	<XR referenceSpace="local">
 			<Hands/>
 		  	
             <RatkScene />
