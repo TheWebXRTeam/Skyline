@@ -103,8 +103,6 @@ const Balls = ({
   const loading = useRef(true);
   loading.current = false; // Set the loading state to false after the image has loaded
 
-  const geometry = new IcosahedronGeometry(radius, 2);
-
   // load a gltf file to be used as geometry
   const gltf = useLoader(GLTFLoader, "butterfly.glb");
   const pfp = useLoader(GLTFLoader, "profilepic.glb");
@@ -165,8 +163,8 @@ const Balls = ({
           }
         });
         const likeCount = item?.post?.likeCount;
-        const pfpGeometry = profilepic.children[0].geometry;
-        console.log("pfpGeometry", pfpGeometry);
+        const pfpGeometry = (profilepic.children[0] as Mesh).geometry;
+
         const base64Texture = useFetchTextureLoader(
           item?.post?.author.avatar,
           loading
@@ -186,6 +184,7 @@ const Balls = ({
             />
             {!base64Texture ? null : (
               <>
+                {/* @ts-ignore */}
                 <Text
                   key={`${uniqueKey}-text1`}
                   position={[0.3, 0, 0]}
@@ -194,6 +193,7 @@ const Balls = ({
                   lineHeight={1}
                   letterSpacing={0.02}
                   anchorX={2.3}
+                  // @ts-ignore
                   wrap={0.1}
                   height={0.1}
                   color={0x000000}
@@ -211,6 +211,7 @@ const Balls = ({
                   lineHeight={1}
                   letterSpacing={0.02}
                   anchorX={2.3}
+                  // @ts-ignore
                   wrap={0.1}
                   height={0.1}
                   color={0x000000}
