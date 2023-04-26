@@ -3,7 +3,8 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 import { faVrCardboard } from "@fortawesome/free-solid-svg-icons";
 import { Box as ContainerBox } from "@mantine/core";
 import { OrbitControls, Stats } from "@react-three/drei";
-import { Canvas, extend, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, extend, useFrame, useThree, useLoader } from "@react-three/fiber";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { Controllers, Interactive, XR } from "@react-three/xr";
 import { RealityAccelerator } from 'ratk';
 import { RefObject, useEffect, useRef } from "react";
@@ -12,6 +13,7 @@ import { Text } from "troika-three-text";
 import LoginForm from '../components/Login';
 import CustomVRButton from "../components/VRButton";
 import Layout from "../components/layouts/article";
+import { useLocalStorage } from '../components/useLocalStorage';
 
 const roboto = "https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
 
@@ -47,77 +49,64 @@ const Highlight = ({ highlightRef }: HighlightProps) => {
   );
 };
 
-const Icosahedrons = ({
-  onSelectStart,
-  onSelectEnd,
-  onHover,
-  onBlur,
-  onSelectMissed,
-}: {
-  onSelectStart: (event: any) => void;
-  onSelectEnd: (event: any) => void;
-  onHover: (event: any) => void;
-  onBlur: (event: any) => void;
-  onSelectMissed: (event: any) => void;
-}) => {
-  const radius = 0.08;
-  const numInstances = 60;
+const Balls = ({
+	onSelectStart,
+	onSelectEnd,
+	onHover,
+	onBlur,
+	onSelectMissed,
+  }) => {
+	const [feedData, setFeedData] = useLocalStorage('feedData', null);
+	useEffect(() => {
+	  if (feedData) {
+		console.log("Feed data in index", feedData);
+	  }
+	}, [feedData]);
+  
+	const radius = 0.08;
+  
+	const geometry = new IcosahedronGeometry(radius, 2);
+  
+	const random = (min, max) =>
+	  Math.random() * (max - min) + min;
+	// load a gltf file to be used as geometry
+	// const gltf = useLoader(GLTFLoader, '/scene.gltf');
 
-  const geometry = new IcosahedronGeometry(radius, 2);
-
-  const random = (min: number, max: number) =>
-    Math.random() * (max - min) + min;
-
-  const icosahedrons = Array.from({ length: numInstances }, (_, i) => (
-    <mesh
-      key={i}
-      position={[random(-2, 2), random(.5, 2), random(-2, 2)]}
-      geometry={geometry}
-    >
-      <meshLambertMaterial color={Math.random() * 0xffffff} />
-    </mesh>
-  ));
-
-  const arrayOfCubes = Array.from({ length: numInstances }, (_, i) => (
-    <mesh
-      key={i}
-      position={[random(-2, 2), random(.5, 2), random(-2, 2)]}
-      geometry={geometry}
-    >
-      <meshLambertMaterial color={Math.random() * 0xffffff} />
-    </mesh>
-  ));
-
-
-  return (
-    <>
-      {icosahedrons.map((icosahedron, index) => (
-        <Interactive
-          key={index}
-          onSelectStart={onSelectStart}
-          onSelectEnd={onSelectEnd}
-          onHover={onHover}
-          onBlur={onBlur}
-          onSelectMissed={onSelectMissed}
-        >
-          {icosahedron}
-          {/* <text
-          {...opts}
-          text={text}
-          font={roboto}
-          anchorX="center"
-          anchorY="middle"
-        >
-          {opts.materialType === "MeshPhongMaterial" ? (
-            <meshPhongMaterial attach="material" color={opts.color} />
-          ) : null}
-        </text> */}
-        </Interactive>
-      ))}
-    </>
-  );
-};
-
+	const balls = feedData.map((item, i) => (
+	  <mesh
+		key={i}
+		position={[random(-2, 2), random(.5, 2), random(-2, 2)]}
+		geometry={geometry}
+	  >
+		<meshLambertMaterial color={Math.random() * 0xffffff} />
+		<text
+		  {...opts}
+		  text={item.post.record.text}
+		  position={[0, 0.2, 0]}
+		  anchorX="center"
+		  anchorY="middle"
+		/>
+	  </mesh>
+	));
+  
+	return (
+	  <>
+		{balls.map((ball, index) => (
+		  <Interactive
+			key={index}
+			onSelectStart={onSelectStart}
+			onSelectEnd={onSelectEnd}
+			onHover={onHover}
+			onBlur={onBlur}
+			onSelectMissed={onSelectMissed}
+		  >
+			{ball}
+		  </Interactive>
+		))}
+	  </>
+	);
+  };
+  
 const App = () => {
   
   const containerRef = useRef<HTMLDivElement>(null);
@@ -370,7 +359,7 @@ const App = () => {
             <directionalLight position={[1, 1, 1]} color={0xffffff} />
             <OrbitControls target={[0, 1.6, 0]} />
             <Stats />
-            <Icosahedrons
+            <Balls
               onSelectStart={onSelectStart}
               onSelectEnd={onSelectEnd}
               onHover={onHover}
