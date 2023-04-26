@@ -4,7 +4,7 @@ import { faVrCardboard } from "@fortawesome/free-solid-svg-icons";
 import { Box as ContainerBox } from "@mantine/core";
 import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas, extend, useFrame, useThree } from "@react-three/fiber";
-import { Controllers, Interactive, XR, ARButton, Hands } from "@react-three/xr";
+import { Controllers, Interactive, XR, XRButton, Hands } from "@react-three/xr";
 
 import { RealityAccelerator } from 'ratk';
 import { RefObject, useEffect, useRef } from "react";
@@ -353,8 +353,22 @@ const App = () => {
       >
 		<LoginForm
 		/>
-        <ARButton />
+		<XRButton
+		/* The type of `XRSession` to create */
+		mode={'AR'}
+		/**
+		 * `XRSession` configuration options
+		 * @see https://immersive-web.github.io/webxr/#feature-dependencies
+		 */
+		sessionInit={{ optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking', 'layers'] }}
+		>
+		{/* Can accept regular DOM children and has an optional callback with the XR button status (unsupported, exited, entered) */}
+		{(status) => `WebXR ${status}`}
+		</XRButton>
         <Canvas
+		  style={{
+			position: "absolute",
+			zIndex: 9999,}}
           camera={{
             fov: 50,
             near: 0.1,
@@ -365,11 +379,8 @@ const App = () => {
         >
         	<XR referenceSpace="local">
 			<Hands/>
-		  	
             <RatkScene />
             <Controllers />
-            <color attach="background" args={[0x090c17]} />
-            <hemisphereLight color={0x606060} groundColor={0x404040} />
             <directionalLight position={[1, 1, 1]} color={0xffffff} />
             <OrbitControls target={[0, 1.6, 0]} />
             <Stats />
