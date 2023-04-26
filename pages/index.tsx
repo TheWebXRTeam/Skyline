@@ -129,6 +129,10 @@ const Balls = ({
 		// Clone animations and setup the mixer
 		const mixer = new THREE.AnimationMixer(butterfly);
 		mixers.push(mixer);
+		// make the animation go forward backward
+		// butterfly.animations.forEach((clip) => {
+		// 	mixer.clipAction(clip).setLoop(THREE.LoopPingPong);
+		// });
 
 		if (gltf.animations && gltf.animations.length > 0) {
 			gltf.animations.forEach((animation) => {
@@ -524,6 +528,7 @@ const App = () => {
 						<RatkScene />
 						<Controllers />
 						<directionalLight position={[1, 1, 1]} color={0xffffff} />
+						<ambientLight intensity={0.5} />
 						<OrbitControls target={[0, 1.6, 0]} />
 						<Stats />
 						<Balls
