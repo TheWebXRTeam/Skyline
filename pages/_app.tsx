@@ -15,7 +15,7 @@ const MyApp = ({ Component, pageProps, router, colorScheme }) => {
 
 MyApp.getInitialProps = ({ ctx }: { ctx: GetServerSidePropsContext }) => ({
   // get color scheme from cookie
-  colorScheme: getCookie("mantine-color-scheme", ctx) || "dark",
+  colorScheme: getCookie("mantine-color-scheme", ctx) || "light",
 });
 
 export default MyApp;

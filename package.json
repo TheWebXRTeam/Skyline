@@ -1,5 +1,5 @@
 {
-  "name": "bluesky-agent",
+  "name": "skyline",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
@@ -7,6 +7,7 @@
     "@atproto/api": "^0.2.9",
     "@emotion/react": "^11.10.6",
     "@emotion/server": "^11.10.0",
+    "@emotion/styled": "^11.10.6",
     "@fortawesome/fontawesome-svg-core": "^6.3.0",
     "@fortawesome/free-solid-svg-icons": "^6.3.0",
     "@fortawesome/react-fontawesome": "^0.2.0",
@@ -14,6 +15,7 @@
     "@mantine/ds": "^5.10.4",
     "@mantine/hooks": "^5.10.4",
     "@mantine/next": "^5.10.4",
+    "@mui/material": "^5.12.2",
     "@pixiv/three-vrm": "^1.0.9",
     "@react-three/drei": "^9.56.25",
     "@react-three/fiber": "^8.3.1",

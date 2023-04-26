@@ -4,16 +4,19 @@ import { faVrCardboard } from "@fortawesome/free-solid-svg-icons";
 import { Box as ContainerBox } from "@mantine/core";
 import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Controllers, Hands, Interactive, XR, XRButton } from "@react-three/xr";
+import { Controllers, Hands, Interactive, XR } from "@react-three/xr";
 
 import { Text } from "@react-three/drei";
-import { RealityAccelerator } from 'ratk';
+import { RealityAccelerator } from "ratk";
 import { RefObject, useEffect, useRef } from "react";
 import { BackSide, IcosahedronGeometry, Mesh } from "three";
-import LoginForm from '../components/Login';
+// import next/dynamic and dynamically load LoginForm instead
+import dynamic from "next/dynamic";
+const LoginForm = dynamic(() => import("../components/Login"), { ssr: false });
+
 // import AR button from react three xr
 import Layout from "../components/layouts/article";
-import { useLocalStorage } from '../components/useLocalStorage';
+import { useLocalStorage } from "../components/useLocalStorage";
 
 library.add(faVrCardboard);
 
@@ -24,76 +27,76 @@ interface HighlightProps {
 const Highlight = ({ highlightRef }: HighlightProps) => {
   return (
     <mesh ref={highlightRef} scale={[1.2, 1.2, 1.2]} visible={false}>
-      <icosahedronBufferGeometry args={[0.08, 2]} />
+      <icosahedronGeometry args={[0.08, 2]} />
       <meshBasicMaterial color={0xffffff} side={BackSide} />
     </mesh>
   );
 };
 
 const Balls = ({
-	onSelectStart,
-	onSelectEnd,
-	onHover,
-	onBlur,
-	onSelectMissed,
-  }) => {
-	const [feedData, setFeedData] = useLocalStorage('feedData', null);
-	useEffect(() => {
-	  if (feedData) {
-		console.log("Feed data in index", feedData);
-	  }
-	}, [feedData]);
-  
-	const radius = 0.08;
-  
-	const geometry = new IcosahedronGeometry(radius, 2);
-  
-	const random = (min, max) =>
-	  Math.random() * (max - min) + min;
-	// load a gltf file to be used as geometry
-	// const gltf = useLoader(GLTFLoader, '/scene.gltf');
+  onSelectStart,
+  onSelectEnd,
+  onHover,
+  onBlur,
+  onSelectMissed,
+}) => {
+  const [feedData, setFeedData] = useLocalStorage("feedData", null);
+  useEffect(() => {
+    if (feedData) {
+      console.log("Feed data in index", feedData);
+    }
+  }, [feedData]);
 
-	const balls = !feedData ? [] : feedData.map((item, i) => (
-	  <mesh
-		key={i}
-		position={[random(-2, 2), random(0.1, 1), random(-2, 2)]}
-		geometry={geometry}
-	  >
-		<meshLambertMaterial color={Math.random() * 0xffffff} />
-		<Text
-      fontSize={0.1}
-      position={[0, 0, 0]}
-      color="white"
-      anchorX="center"
-      anchorY="middle"
-      outlineWidth={0.01}
-      outlineColor="black"
-    >
-      {item.post.record.text}
-    </Text>
-	  </mesh>
-	));
-  
-	return (
-	  <>
-		{balls.map((ball, index) => (
-		  <Interactive
-			key={index}
-			onSelectStart={onSelectStart}
-			onSelectEnd={onSelectEnd}
-			onHover={onHover}
-			onBlur={onBlur}
-			onSelectMissed={onSelectMissed}
-		  >
-			{ball}
-		  </Interactive>
-		))}
-	  </>
-	);
-  };
-  
+  const radius = 0.08;
+
+  const geometry = new IcosahedronGeometry(radius, 2);
+
+  const random = (min, max) => Math.random() * (max - min) + min;
+  // load a gltf file to be used as geometry
+  // const gltf = useLoader(GLTFLoader, '/scene.gltf');
+
+  const balls = !feedData
+    ? []
+    : feedData.map((item, i) => (
+        <mesh
+          key={i}
+          position={[random(-2, 2), random(0.1, 1), random(-2, 2)]}
+          geometry={geometry}
+        >
+          <meshLambertMaterial color={Math.random() * 0xffffff} />
+          <Text
+            fontSize={0.1}
+            position={[0, 0, 0]}
+            color="white"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.01}
+            outlineColor="black"
+          >
+            {item.post.record.text}
+          </Text>
+        </mesh>
+      ));
+
+  return (
+    <>
+      {balls.map((ball, index) => (
+        <Interactive
+          key={index}
+          onSelectStart={onSelectStart}
+          onSelectEnd={onSelectEnd}
+          onHover={onHover}
+          onBlur={onBlur}
+          onSelectMissed={onSelectMissed}
+        >
+          {ball}
+        </Interactive>
+      ))}
+    </>
+  );
+};
+
 const App = () => {
-  
   const containerRef = useRef<HTMLDivElement>(null);
 
   const rightHighlight = useRef<Mesh>(null!);
@@ -107,7 +110,7 @@ const App = () => {
   const isRightSelectPressed = useRef(false);
 
   const isLeftSelectPressed = useRef(false);
-  
+
   const onSelectStart = (event: any) => {
     const selectedObject = event.intersections[0]?.object;
 
@@ -283,31 +286,28 @@ const App = () => {
   };
 
   const RatkScene = () => {
-
     // get a reference to the react-three-fiber renderer
     // THESE ARE THE REFERENCES TO THE THREE.JS STUFF
 
     const { gl, scene, camera, xr } = useThree();
     const ratkObject = new RealityAccelerator(gl.xr);
-    scene.add(ratkObject.root); 
+    scene.add(ratkObject.root);
 
+    useEffect(() => {
+      // WRITE THREE.JS CODE HERE
 
-  useEffect(() => {
-    // WRITE THREE.JS CODE HERE
+      console.log("three.js scene is", scene);
 
-    console.log("three.js scene is", scene)
+      console.log("three.js renderer is", gl);
+    }, []);
 
-    console.log('three.js renderer is', gl)
+    //
+    useFrame((state, delta) => {
+      ratkObject.update();
+    });
 
-  }, [])
-
-  // 
-  useFrame((state, delta) => {
-    ratkObject.update();
-  });
-  
     return <></>;
-  }
+  };
 
   return (
     <Layout title="Social Agent">
@@ -324,24 +324,12 @@ const App = () => {
           alignItems: "center",
         }}
       >
-		<LoginForm
-		/>
-		<XRButton
-		/* The type of `XRSession` to create */
-		mode={'AR'}
-		/**
-		 * `XRSession` configuration options
-		 * @see https://immersive-web.github.io/webxr/#feature-dependencies
-		 */
-		sessionInit={{ optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking', 'layers'] }}
-		>
-		{/* Can accept regular DOM children and has an optional callback with the XR button status (unsupported, exited, entered) */}
-		{(status) => `WebXR ${status}`}
-		</XRButton>
+        <LoginForm />
         <Canvas
-		  style={{
-			position: "absolute",
-			zIndex: 9999,}}
+          style={{
+            position: "absolute",
+            zIndex: 9999,
+          }}
           camera={{
             fov: 50,
             near: 0.1,
@@ -350,8 +338,8 @@ const App = () => {
           }}
           gl={{ antialias: true }}
         >
-        	<XR referenceSpace="local">
-			<Hands/>
+          <XR referenceSpace="local">
+            <Hands />
             <RatkScene />
             <Controllers />
             <directionalLight position={[1, 1, 1]} color={0xffffff} />
