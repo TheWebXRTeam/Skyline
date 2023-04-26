@@ -5,7 +5,7 @@ import { faVrCardboard } from "@fortawesome/free-solid-svg-icons";
 import { Box as ContainerBox } from "@mantine/core";
 import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
-import { Controllers, Hands, Interactive, XR } from "@react-three/xr";
+import { Controllers, Hands, Interactive, XR, useController} from "@react-three/xr";
 import * as THREE from "three";
 import { Text } from "@react-three/drei";
 import { RealityAccelerator } from "ratk";
@@ -77,13 +77,13 @@ const Balls = ({
 		  butterfly.animations = gltf.animations;
 
       const groupRef = useRef()
-
       useEffect(() => {
         let g = groupRef.current
         groups.push(g);
         // randomize the color of the butterfly
         g.init = ()=>{
-
+          g.IDLE = 0
+          g.STATE = g.IDLE
           g.position.set(random(-2,2),random(0.1,1),random(-2,2))
           g.period = new THREE.Vector3(random(0,1),random(0,1),random(0,1))
           g.initialPosition = g.position.clone()
@@ -120,6 +120,8 @@ const Balls = ({
           x += g.initialPosition.x
           y += g.initialPosition.y
           z += g.initialPosition.z
+
+          
           g.position.set(x,y,z)
         }
   
@@ -127,11 +129,26 @@ const Balls = ({
           if(g.STATE == g.IDLE){
             g.hover(d)
           }else if(g.STATE == g.HELD){
-            //TODO  when held, grab ref of the hands, and go to them
+            g.seek(d)
           }else{
             
           }
   
+        }
+
+        g.seek = (d)=>{
+          g.position.lerp(g.targetPosition,0.2)
+        }
+        g.grab = ()=>{
+          if(g.STATE == g.IDLE)g.STATE = g.HELD
+        }
+
+        g.release= ()=>{
+          if(g.STATE == g.HELD)g.STATE = g.IDLE
+        }
+        g.setTarget = (t)=>{
+          g.targetPosition = t
+          //TODO - care about handedness, add an offset to target based on where we should go (or else hands have an offset null and we target that offset null? many ways to skin)
         }
   
 
@@ -388,7 +405,6 @@ const App = () => {
     //
     useFrame((state, delta) => {
       //GLOBAL tick update
-
 
       ratkObject.update();
     });
