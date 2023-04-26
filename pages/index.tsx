@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { library } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import { faVrCardboard } from "@fortawesome/free-solid-svg-icons";
@@ -9,7 +10,7 @@ import { Controllers, Hands, Interactive, XR } from "@react-three/xr";
 import { Text } from "@react-three/drei";
 import { RealityAccelerator } from "ratk";
 import { RefObject, useEffect, useRef } from "react";
-import { BackSide, IcosahedronGeometry, Mesh } from "three";
+import { BackSide, IcosahedronGeometry, Mesh, Vector3 } from "three";
 // import next/dynamic and dynamically load LoginForm instead
 import dynamic from "next/dynamic";
 const LoginForm = dynamic(() => import("../components/Login"), { ssr: false });
@@ -21,6 +22,7 @@ import { useLocalStorage } from "../components/useLocalStorage";
 
 library.add(faVrCardboard);
 
+const TWO_PI = 6.28318530718
 interface HighlightProps {
   highlightRef: RefObject<Mesh>;
 }
@@ -51,6 +53,16 @@ const Balls = ({
 	const radius = 0.08;
   
 	const geometry = new IcosahedronGeometry(radius, 2);
+  const groups = []
+
+  useFrame((state, delta) => {
+    //GLOBAL tick update
+    for(let i = 0; i < groups.length; i++){
+      let bf = groups[i]
+      bf.update()
+    }
+  });
+
   
 	const random = (min, max) => Math.random() * (max - min) + min;
 	// load a gltf file to be used as geometry
@@ -63,16 +75,39 @@ const Balls = ({
 		  const butterfly = gltf.scene.clone();
 		  // copy animation clips to butterfly
 		  butterfly.animations = gltf.animations;
-		  // randomize the color of the butterfly
-		  butterfly.traverse((child) => {
-			if (child instanceof Mesh) {
-					child.material.color.setHex(Math.random() * 0xffffff);
-			}
-		});
-		  
-		  
+
+      const groupRef = useRef()
+
+      useEffect(() => {
+        groups.push(groupRef.current);
+        // randomize the color of the butterfly
+        groupRef.current.init = ()=>{
+          groupRef.current.position.set(random(-2,2),random(0.1,1),random(-2,2))
+
+          groupRef.current.traverse((child) => {
+            console.log('traversing', child)
+            if (child instanceof Mesh) {
+              // child.material.color.setHex(Math.random() * 0xffffff);
+              //TODO randomize texture for diff bois
+            }
+          })
+          }
+        
+  
+        groupRef.current.update = (d)=>{
+          console.log('update')
+        }
+  
+        groupRef.current.run = (d)=>{
+  
+        }
+  
+        groupRef.current.init()
+
+      }, [])
+      
 		  return (
-			<group position={[random(-2, 2), random(0.1, 1), random(-2, 2)]}>
+			<group ref={groupRef}>
 			  <Text
 				fontSize={0.06}
 				position={[0, 0, 0]}
@@ -321,6 +356,9 @@ const App = () => {
 
     //
     useFrame((state, delta) => {
+      //GLOBAL tick update
+
+
       ratkObject.update();
     });
 
