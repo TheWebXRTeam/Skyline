@@ -3,14 +3,15 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 import { faVrCardboard } from "@fortawesome/free-solid-svg-icons";
 import { Box as ContainerBox } from "@mantine/core";
 import { OrbitControls, Stats } from "@react-three/drei";
-import { Canvas, useFrame, useThree, extend } from "@react-three/fiber";
+import { Canvas, extend, useFrame, useThree } from "@react-three/fiber";
 import { Controllers, Interactive, XR } from "@react-three/xr";
 import { RealityAccelerator } from 'ratk';
 import { RefObject, useEffect, useRef } from "react";
 import { BackSide, IcosahedronGeometry, Mesh } from "three";
+import { Text } from "troika-three-text";
+import LoginForm from '../components/Login';
 import CustomVRButton from "../components/VRButton";
 import Layout from "../components/layouts/article";
-import { Text } from "troika-three-text";
 
 const roboto = "https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
 
@@ -349,6 +350,8 @@ const App = () => {
           alignItems: "center",
         }}
       >
+		<LoginForm
+		/>
         <CustomVRButton />
         <Canvas
           camera={{
