@@ -6,7 +6,7 @@ import { Box as ContainerBox } from "@mantine/core";
 import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Controllers, Hands, Interactive, XR } from "@react-three/xr";
-
+import * as THREE from "three";
 import { Text } from "@react-three/drei";
 import { RealityAccelerator } from "ratk";
 import { RefObject, useEffect, useRef } from "react";
@@ -59,7 +59,7 @@ const Balls = ({
     //GLOBAL tick update
     for(let i = 0; i < groups.length; i++){
       let bf = groups[i]
-      bf.update()
+      bf.run(delta)
     }
   });
 
@@ -79,10 +79,17 @@ const Balls = ({
       const groupRef = useRef()
 
       useEffect(() => {
-        groups.push(groupRef.current);
+        let g = groupRef.current
+        groups.push(g);
         // randomize the color of the butterfly
-        groupRef.current.init = ()=>{
-          groupRef.current.position.set(random(-2,2),random(0.1,1),random(-2,2))
+        g.init = ()=>{
+
+          g.position.set(random(-2,2),random(0.1,1),random(-2,2))
+          g.period = new THREE.Vector3(random(0,1),random(0,1),random(0,1))
+          g.initialPosition = g.position.clone()
+          g.wanderRadius = 0.1
+          g.phase = random(0,TWO_PI)
+          g.theta = 0
 
           groupRef.current.traverse((child) => {
             console.log('traversing', child)
@@ -91,18 +98,42 @@ const Balls = ({
               //TODO randomize texture for diff bois
             }
           })
-          }
+        }
         
-  
-        groupRef.current.update = (d)=>{
-          console.log('update')
+        g.init()
+        g.multichord= (p,chords,offset,r)=>{
+          let val = Math.cos(p+offset)*r
+          for(let i = 0; i < chords; i++){
+            p*=2
+            r*= 0.5
+            val += Math.cos(p+offset)*r
+          }  
+          return val
+        }
+        g.hover = (d)=>{
+          g.theta += d*2
+
+          let x = g.multichord(g.theta*g.period.x,4,g.phase,g.wanderRadius)
+          let y = g.multichord(g.theta*g.period.y,4,g.phase,g.wanderRadius)
+          let z = g.multichord(g.theta*g.period.z,4,g.phase,g.wanderRadius)
+
+          x += g.initialPosition.x
+          y += g.initialPosition.y
+          z += g.initialPosition.z
+          g.position.set(x,y,z)
         }
   
-        groupRef.current.run = (d)=>{
+        g.run = (d)=>{
+          if(g.STATE == g.IDLE){
+            g.hover(d)
+          }else if(g.STATE == g.HELD){
+            //TODO  when held, grab ref of the hands, and go to them
+          }else{
+            
+          }
   
         }
   
-        groupRef.current.init()
 
       }, [])
       
