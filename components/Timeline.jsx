@@ -15,7 +15,6 @@ function Timeline(props) {
 		e.preventDefault();
 		try {
 			const sessionData = props.sessionData.data;
-			console.log('Session data:', sessionData);
 			if (!sessionData) {
 				console.error('No session data found. Please log in first.');
 				return;
@@ -26,7 +25,7 @@ function Timeline(props) {
 			console.log('Timeline here. Response:', res);
 			setFeedData(res.data.feed);
 		} catch (error) {
-			console.error('Post creation error:', error);
+			console.error('Pull error:', error);
 		}
 	};
 
