@@ -3,36 +3,17 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 import { faVrCardboard } from "@fortawesome/free-solid-svg-icons";
 import { Box as ContainerBox } from "@mantine/core";
 import { OrbitControls, Stats } from "@react-three/drei";
-import { Canvas, extend, useFrame, useThree, useLoader } from "@react-three/fiber";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import { Controllers, Interactive, XR } from "@react-three/xr";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Controllers, Hands, Interactive, XR, XRButton } from "@react-three/xr";
+
+import { Text } from "@react-three/drei";
 import { RealityAccelerator } from 'ratk';
 import { RefObject, useEffect, useRef } from "react";
 import { BackSide, IcosahedronGeometry, Mesh } from "three";
-import { Text } from "troika-three-text";
 import LoginForm from '../components/Login';
-import CustomVRButton from "../components/VRButton";
+// import AR button from react three xr
 import Layout from "../components/layouts/article";
 import { useLocalStorage } from '../components/useLocalStorage';
-
-const roboto = "https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
-
-extend({ Text });
-
-const opts = {
-  font: "Philosopher",
-  fontSize: 10,
-  color: "#99ccff",
-  maxWidth: 300,
-  scale: 0.01,
-  lineHeight: 1,
-  letterSpacing: 0,
-  textAlign: "justify",
-  materialType: "MeshPhongMaterial"
-}
-
-const text =
-  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
 library.add(faVrCardboard);
 
@@ -72,20 +53,24 @@ const Balls = ({
 	// load a gltf file to be used as geometry
 	// const gltf = useLoader(GLTFLoader, '/scene.gltf');
 
-	const balls = feedData.map((item, i) => (
+	const balls = !feedData ? [] : feedData.map((item, i) => (
 	  <mesh
 		key={i}
-		position={[random(-2, 2), random(.5, 2), random(-2, 2)]}
+		position={[random(-2, 2), random(0.1, 1), random(-2, 2)]}
 		geometry={geometry}
 	  >
 		<meshLambertMaterial color={Math.random() * 0xffffff} />
-		<text
-		  {...opts}
-		  text={item.post.record.text}
-		  position={[0, 0.2, 0]}
-		  anchorX="center"
-		  anchorY="middle"
-		/>
+		<Text
+      fontSize={0.1}
+      position={[0, 0, 0]}
+      color="white"
+      anchorX="center"
+      anchorY="middle"
+      outlineWidth={0.01}
+      outlineColor="black"
+    >
+      {item.post.record.text}
+    </Text>
 	  </mesh>
 	));
   
@@ -341,8 +326,22 @@ const App = () => {
       >
 		<LoginForm
 		/>
-        <CustomVRButton />
+		<XRButton
+		/* The type of `XRSession` to create */
+		mode={'AR'}
+		/**
+		 * `XRSession` configuration options
+		 * @see https://immersive-web.github.io/webxr/#feature-dependencies
+		 */
+		sessionInit={{ optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking', 'layers'] }}
+		>
+		{/* Can accept regular DOM children and has an optional callback with the XR button status (unsupported, exited, entered) */}
+		{(status) => `WebXR ${status}`}
+		</XRButton>
         <Canvas
+		  style={{
+			position: "absolute",
+			zIndex: 9999,}}
           camera={{
             fov: 50,
             near: 0.1,
@@ -351,11 +350,10 @@ const App = () => {
           }}
           gl={{ antialias: true }}
         >
-          <XR>
+        	<XR referenceSpace="local">
+			<Hands/>
             <RatkScene />
             <Controllers />
-            <color attach="background" args={[0x090c17]} />
-            <hemisphereLight color={0x606060} groundColor={0x404040} />
             <directionalLight position={[1, 1, 1]} color={0xffffff} />
             <OrbitControls target={[0, 1.6, 0]} />
             <Stats />
