@@ -2,13 +2,14 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import { faVrCardboard } from "@fortawesome/free-solid-svg-icons";
 import { Box as ContainerBox } from "@mantine/core";
+import * as THREE from "three";
 import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Controllers, Hands, Interactive, XR } from "@react-three/xr";
 
 import { Text } from "@react-three/drei";
 import { RealityAccelerator } from "ratk";
-import { RefObject, useEffect, useRef } from "react";
+import { RefObject, useEffect, useRef, useState } from "react";
 import { BackSide, IcosahedronGeometry, Mesh } from "three";
 // import next/dynamic and dynamically load LoginForm instead
 import dynamic from "next/dynamic";
@@ -22,16 +23,59 @@ import { useLocalStorage } from "../components/useLocalStorage";
 library.add(faVrCardboard);
 
 interface HighlightProps {
-  highlightRef: RefObject<Mesh>;
+	highlightRef: RefObject<Mesh>;
 }
 
 const Highlight = ({ highlightRef }: HighlightProps) => {
-  return (
-    <mesh ref={highlightRef} scale={[1.2, 1.2, 1.2]} visible={false}>
-      <icosahedronGeometry args={[0.08, 2]} />
-      <meshBasicMaterial color={0xffffff} side={BackSide} />
-    </mesh>
-  );
+	return (
+		<mesh ref={highlightRef} scale={[1.2, 1.2, 1.2]} visible={false}>
+			<icosahedronGeometry args={[0.08, 2]} />
+			<meshBasicMaterial color={0xffffff} side={BackSide} />
+		</mesh>
+	);
+};
+const useFetchTextureLoader = (url, loading) => {
+	const [texture, setTexture] = useState(null);
+  
+	useEffect(() => {
+	  const loadTexture = async () => {
+		try {
+		  const apiUrl = '/api/image-proxy'; // Change this to match your API route
+		  const response = await fetch(apiUrl, {
+			method: 'POST',
+			headers: {
+			  'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ url: url }),
+		  });
+		  const jsonResponse = await response.json();
+		  const base64Image = jsonResponse.base64Image;
+		  const binaryImage = atob(base64Image.split(',')[1]);
+		  const arrayBuffer = new ArrayBuffer(binaryImage.length);
+		  const uint8Array = new Uint8Array(arrayBuffer);
+  
+		  for (let i = 0; i < binaryImage.length; i++) {
+			uint8Array[i] = binaryImage.charCodeAt(i);
+		  }
+  
+		  const blob = new Blob([uint8Array], { type: 'image/jpeg' });
+		  const newUrl = URL.createObjectURL(blob);
+		  const newTexture = new THREE.TextureLoader().load(newUrl, () => {
+			loading.current = false; 		  
+		});
+  
+		  setTexture(newTexture);
+		} catch (error) {
+		  console.error('Error loading texture:', error);
+		}
+	  };
+  
+	  if (url) {
+		loadTexture();
+	  }
+	}, [url]);
+  
+	return texture;
 };
 
 const Balls = ({
@@ -40,343 +84,388 @@ const Balls = ({
 	onHover,
 	onBlur,
 	onSelectMissed,
-  }) => {
+}) => {
 	const [feedData, setFeedData] = useLocalStorage("feedData", null);
+	const loading = useRef(true);
+	loading.current = false; // Set the loading state to false after the image has loaded
+
+
+	
 	useEffect(() => {
-	  if (feedData) {
-		console.log("Feed data in index", feedData);
-	  }
+		if (feedData) {
+			console.log("Feed data in index", feedData);
+		}
 	}, [feedData]);
-  
+
 	const radius = 0.08;
-  
+
 	const geometry = new IcosahedronGeometry(radius, 2);
-  
+
 	const random = (min, max) => Math.random() * (max - min) + min;
 	// load a gltf file to be used as geometry
 	const gltf = useLoader(GLTFLoader, "butterfly.glb");
-  
+	const pfp = useLoader(GLTFLoader, "profilepic.glb");
+
 	const balls = !feedData
-	  ? []
-	  : feedData.map((item, i) => {
-		  // instance the gltf file to be used as geometry for each item
-		  const butterfly = gltf.scene.clone();
-		  // copy animation clips to butterfly
-		  butterfly.animations = gltf.animations;
-		  // randomize the color of the butterfly
-		  butterfly.traverse((child) => {
-			if (child instanceof Mesh) {
+		? []
+		: feedData.map((item, i) => {
+			const uniqueKey = `${item.post.author.displayName}-${i}`;
+
+			// instance the gltf file to be used as geometry for each item
+			const butterfly = gltf.scene.clone();
+			const profilepic = pfp.scene.clone();
+			profilepic.traverse((child) => {
+				if (child instanceof Mesh) {
 					child.material.color.setHex(Math.random() * 0xffffff);
+				}
+			});
+
+				// copy animation clips to butterfly
+				butterfly.animations = gltf.animations;
+				// randomize the color of the butterfly
+				butterfly.traverse((child) => {
+					if (child instanceof Mesh) {
+						child.material.color.setHex(Math.random() * 0xffffff);
+					}
+				});
+				const likeCount = item?.post?.likeCount;
+				const pfpGeometry = profilepic.children[0].geometry;
+				const base64Texture = useFetchTextureLoader(item?.post?.author.avatar, loading);
+
+				return (
+					<group key={uniqueKey} position={[random(-2, 2), random(0.1, 1), random(-2, 2)]}>
+						{/* add cube to the scene */}
+						<primitive
+							key={`${uniqueKey}-primitive`}
+							scale={[0.08, 0.08, 0.08]}
+							position={[0, 0, 0]}
+							object={butterfly}
+						/>
+						{!base64Texture ? null : (
+							<>
+								<Text
+									key={`${uniqueKey}-text1`}
+									position={[0.3, 0, 0]}
+									fontSize={0.03}
+									maxWidth={1}
+									lineHeight={1}
+									letterSpacing={0.02}
+									anchorX={2.3}
+									wrap={0.1}
+									height={0.1}
+									color={0x000000}
+									textAlign={"left"}
+								>
+									{item?.post?.author?.displayName + ": " + item.post.record.text}
+								</Text>
+								<Text
+								    key={`${uniqueKey}-text2`}
+									position={[2, 0, 0]}
+									fontSize={0.03}
+									maxWidth={0.5}
+									lineHeight={1}
+									letterSpacing={0.02}
+									anchorX={2.3}
+									wrap={0.1}
+									height={0.1}
+									color={0x000000}
+									textAlign={"center"}
+								>
+									{likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
+								</Text>
+								<mesh
+									geometry={pfpGeometry}
+									scale={[0.07, 0.07, 0.07]}
+									position={[0, 0, 0.04]}
+								>
+									<meshStandardMaterial side={THREE.DoubleSide} map={base64Texture} />
+								</mesh>
+							</>)}
+					</group>
+				);
+			});
+			return (
+				<>
+					{balls.map((ball, index) => (
+						<Interactive
+							key={index + "-interactive"}
+							onSelectStart={onSelectStart}
+							onSelectEnd={onSelectEnd}
+							onHover={onHover}
+							onBlur={onBlur}
+							onSelectMissed={onSelectMissed}
+						>
+							{ball}
+						</Interactive>
+					))}
+				</>
+			);
+		};
+
+	const App = () => {
+		const containerRef = useRef<HTMLDivElement>(null);
+
+		const rightHighlight = useRef<Mesh>(null!);
+
+		const leftHighlight = useRef<Mesh>(null!);
+
+		const isRightPointingToObject = useRef(false);
+
+		const isLeftPointingToObject = useRef(false);
+
+		const isRightSelectPressed = useRef(false);
+
+		const isLeftSelectPressed = useRef(false);
+
+		const onSelectStart = (event: any) => {
+
+			const selectedObject = event.intersections[0]?.object;
+
+			const controller = event.target;
+			const handedness = controller.inputSource.handedness;
+
+			if (handedness === "left") {
+				//check
+				isLeftSelectPressed.current = true; //check
+				if (isLeftPointingToObject.current) {
+					//check
+					if (rightHighlight.current.visible) {
+						//check
+						leftHighlight.current.position.copy(selectedObject.position); //check
+						leftHighlight.current.visible = true; //check
+						rightHighlight.current.visible = false; //check
+					} else if (!rightHighlight.current.visible) {
+						//check
+						leftHighlight.current.position.copy(selectedObject.position); //check
+						leftHighlight.current.visible = true; //check
+					}
+				} else if (!isLeftPointingToObject.current) {
+					if (isRightSelectPressed.current) {
+						if (isRightPointingToObject.current) {
+							leftHighlight.current.position.copy(selectedObject.position);
+							leftHighlight.current.visible = true;
+						} else if (!isRightPointingToObject.current) {
+							leftHighlight.current.visible = false;
+						}
+					} else if (!isRightSelectPressed.current) {
+						leftHighlight.current.visible = false;
+					}
+				}
+			} else if (handedness === "right") {
+				//check
+				isRightSelectPressed.current = true; //check
+				if (isRightPointingToObject.current) {
+					//check
+					if (leftHighlight.current.visible) {
+						//check
+						rightHighlight.current.position.copy(selectedObject.position); //check
+						rightHighlight.current.visible = true; //check
+						leftHighlight.current.visible = false; //check
+					} else if (!leftHighlight.current.visible) {
+						//check
+						rightHighlight.current.position.copy(selectedObject.position); //check
+						rightHighlight.current.visible = true; //check
+					}
+				} else if (!isRightPointingToObject.current) {
+					if (isLeftSelectPressed.current) {
+						if (isLeftPointingToObject.current) {
+							rightHighlight.current.position.copy(selectedObject.position);
+							rightHighlight.current.visible = true;
+						} else if (!isLeftPointingToObject.current) {
+							rightHighlight.current.visible = false;
+						}
+					} else if (!isLeftSelectPressed.current) {
+						rightHighlight.current.visible = false;
+					}
+				}
 			}
-		});
-		  
-		  
-		  return (
-			<group position={[random(-2, 2), random(0.1, 1), random(-2, 2)]}>
-			  <Text
-				fontSize={0.06}
-				position={[0, 0, 0]}
-				color="white"
-				anchorX="center"
-				anchorY="middle"
-				outlineWidth={0.01}
-				outlineColor="black"
-			  >
-				{item.post.record.text}
-			  </Text>
-			  {/* add cube to the scene */}
-			  <primitive
-				key={i}
-				scale={[0.08, 0.08, 0.08]}
-				position={[0, 0, 0]}
-				object={butterfly}
-			  />
-			</group>
-		  );
-		});
-  
-	return (
-	  <>
-		{balls.map((ball, index) => (
-		  <Interactive
-			key={index}
-			onSelectStart={onSelectStart}
-			onSelectEnd={onSelectEnd}
-			onHover={onHover}
-			onBlur={onBlur}
-			onSelectMissed={onSelectMissed}
-		  >
-			{ball}
-		  </Interactive>
-		))}
-	  </>
-	);
-  };
-	
-const App = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
+		};
 
-  const rightHighlight = useRef<Mesh>(null!);
+		const onSelectEnd = (event: any) => {
+			const selectedObject = event.intersections[0]?.object;
 
-  const leftHighlight = useRef<Mesh>(null!);
+			const controller = event.target;
+			const handedness = controller.inputSource.handedness;
 
-  const isRightPointingToObject = useRef(false);
+			if (handedness === "left") {
+				//check
+				isLeftSelectPressed.current = false; //check
+				if (isLeftPointingToObject.current) {
+					//check
+					if (isRightSelectPressed.current) {
+						//checl
+						leftHighlight.current.visible = false; //check
+						rightHighlight.current.visible = true; //check
+					} else if (!isRightSelectPressed.current) {
+						//check
+						leftHighlight.current.visible = false; //check
+					}
+				} else if (!isLeftPointingToObject.current) {
+					if (isRightSelectPressed.current) {
+						leftHighlight.current.position.copy(selectedObject.position);
+						leftHighlight.current.visible = true;
+					} else if (!isRightSelectPressed.current) {
+						leftHighlight.current.visible = false;
+					}
+				}
+			} else if (handedness === "right") {
+				//check
+				isRightSelectPressed.current = false; //check
+				if (isRightPointingToObject.current) {
+					//check
+					if (isLeftSelectPressed.current) {
+						//check
+						rightHighlight.current.visible = false; //check
+						leftHighlight.current.visible = true; //check
+					} else if (!isLeftSelectPressed.current) {
+						//check
+						rightHighlight.current.visible = false; //check
+						leftHighlight.current.visible = false; //check
+					}
+				} else if (!isRightPointingToObject.current) {
+					if (isLeftSelectPressed.current) {
+						rightHighlight.current.position.copy(selectedObject.position);
+						rightHighlight.current.visible = true;
+					} else if (!isLeftSelectPressed.current) {
+						rightHighlight.current.visible = false;
+					}
+				}
+			}
+		};
 
-  const isLeftPointingToObject = useRef(false);
+		const onHover = (event: any) => {
+			const selectedObject = event.intersections[0]?.object;
 
-  const isRightSelectPressed = useRef(false);
+			const controller = event.target;
+			const handedness = controller.inputSource.handedness;
 
-  const isLeftSelectPressed = useRef(false);
+			if (handedness === "left") {
+				isLeftPointingToObject.current = true;
+				if (isLeftSelectPressed.current) {
+					leftHighlight.current.position.copy(selectedObject.position);
+					leftHighlight.current.visible = true;
+				} else if (!isLeftSelectPressed.current) {
+					leftHighlight.current.visible = false;
+				}
+			} else if (handedness === "right") {
+				isRightPointingToObject.current = true;
+				if (isRightSelectPressed.current) {
+					rightHighlight.current.position.copy(selectedObject.position);
+					rightHighlight.current.visible = true;
+				} else if (!isRightSelectPressed.current) {
+					rightHighlight.current.visible = false;
+				}
+			}
+		};
 
-  const onSelectStart = (event: any) => {
+		const onBlur = (event: any) => {
+			const controller = event.target;
+			const handedness = controller.inputSource.handedness;
 
-    const selectedObject = event.intersections[0]?.object;
+			if (handedness === "left") {
+				isLeftPointingToObject.current = false;
+				leftHighlight.current.visible = false;
+			} else if (handedness === "right") {
+				isRightPointingToObject.current = false;
+				rightHighlight.current.visible = false;
+			}
+		};
 
-    const controller = event.target;
-    const handedness = controller.inputSource.handedness;
+		const onSelectMissed = (event: any) => {
+			const controller = event.target;
+			const handedness = controller.inputSource.handedness;
 
-    if (handedness === "left") {
-      //check
-      isLeftSelectPressed.current = true; //check
-      if (isLeftPointingToObject.current) {
-        //check
-        if (rightHighlight.current.visible) {
-          //check
-          leftHighlight.current.position.copy(selectedObject.position); //check
-          leftHighlight.current.visible = true; //check
-          rightHighlight.current.visible = false; //check
-        } else if (!rightHighlight.current.visible) {
-          //check
-          leftHighlight.current.position.copy(selectedObject.position); //check
-          leftHighlight.current.visible = true; //check
-        }
-      } else if (!isLeftPointingToObject.current) {
-        if (isRightSelectPressed.current) {
-          if (isRightPointingToObject.current) {
-            leftHighlight.current.position.copy(selectedObject.position);
-            leftHighlight.current.visible = true;
-          } else if (!isRightPointingToObject.current) {
-            leftHighlight.current.visible = false;
-          }
-        } else if (!isRightSelectPressed.current) {
-          leftHighlight.current.visible = false;
-        }
-      }
-    } else if (handedness === "right") {
-      //check
-      isRightSelectPressed.current = true; //check
-      if (isRightPointingToObject.current) {
-        //check
-        if (leftHighlight.current.visible) {
-          //check
-          rightHighlight.current.position.copy(selectedObject.position); //check
-          rightHighlight.current.visible = true; //check
-          leftHighlight.current.visible = false; //check
-        } else if (!leftHighlight.current.visible) {
-          //check
-          rightHighlight.current.position.copy(selectedObject.position); //check
-          rightHighlight.current.visible = true; //check
-        }
-      } else if (!isRightPointingToObject.current) {
-        if (isLeftSelectPressed.current) {
-          if (isLeftPointingToObject.current) {
-            rightHighlight.current.position.copy(selectedObject.position);
-            rightHighlight.current.visible = true;
-          } else if (!isLeftPointingToObject.current) {
-            rightHighlight.current.visible = false;
-          }
-        } else if (!isLeftSelectPressed.current) {
-          rightHighlight.current.visible = false;
-        }
-      }
-    }
-  };
+			if (handedness === "left") {
+				if (isLeftSelectPressed.current) {
+					if (!isLeftPointingToObject.current) {
+						leftHighlight.current.visible = false;
+						isLeftSelectPressed.current = false;
+					}
+				}
+			} else if (handedness === "right") {
+				if (isRightSelectPressed.current) {
+					if (!isRightPointingToObject.current) {
+						rightHighlight.current.visible = false;
+						isRightSelectPressed.current = false;
+					}
+				}
+			}
+		};
 
-  const onSelectEnd = (event: any) => {
-    const selectedObject = event.intersections[0]?.object;
+		const RatkScene = () => {
+			// get a reference to the react-three-fiber renderer
+			// THESE ARE THE REFERENCES TO THE THREE.JS STUFF
 
-    const controller = event.target;
-    const handedness = controller.inputSource.handedness;
+			const { gl, scene, camera, xr } = useThree();
+			const ratkObject = new RealityAccelerator(gl.xr);
+			scene.add(ratkObject.root);
 
-    if (handedness === "left") {
-      //check
-      isLeftSelectPressed.current = false; //check
-      if (isLeftPointingToObject.current) {
-        //check
-        if (isRightSelectPressed.current) {
-          //checl
-          leftHighlight.current.visible = false; //check
-          rightHighlight.current.visible = true; //check
-        } else if (!isRightSelectPressed.current) {
-          //check
-          leftHighlight.current.visible = false; //check
-        }
-      } else if (!isLeftPointingToObject.current) {
-        if (isRightSelectPressed.current) {
-          leftHighlight.current.position.copy(selectedObject.position);
-          leftHighlight.current.visible = true;
-        } else if (!isRightSelectPressed.current) {
-          leftHighlight.current.visible = false;
-        }
-      }
-    } else if (handedness === "right") {
-      //check
-      isRightSelectPressed.current = false; //check
-      if (isRightPointingToObject.current) {
-        //check
-        if (isLeftSelectPressed.current) {
-          //check
-          rightHighlight.current.visible = false; //check
-          leftHighlight.current.visible = true; //check
-        } else if (!isLeftSelectPressed.current) {
-          //check
-          rightHighlight.current.visible = false; //check
-          leftHighlight.current.visible = false; //check
-        }
-      } else if (!isRightPointingToObject.current) {
-        if (isLeftSelectPressed.current) {
-          rightHighlight.current.position.copy(selectedObject.position);
-          rightHighlight.current.visible = true;
-        } else if (!isLeftSelectPressed.current) {
-          rightHighlight.current.visible = false;
-        }
-      }
-    }
-  };
+			useEffect(() => {
+				// WRITE THREE.JS CODE HERE
 
-  const onHover = (event: any) => {
-    const selectedObject = event.intersections[0]?.object;
+				console.log("three.js scene is", scene);
 
-    const controller = event.target;
-    const handedness = controller.inputSource.handedness;
+				console.log("three.js renderer is", gl);
+			}, []);
 
-    if (handedness === "left") {
-      isLeftPointingToObject.current = true;
-      if (isLeftSelectPressed.current) {
-        leftHighlight.current.position.copy(selectedObject.position);
-        leftHighlight.current.visible = true;
-      } else if (!isLeftSelectPressed.current) {
-        leftHighlight.current.visible = false;
-      }
-    } else if (handedness === "right") {
-      isRightPointingToObject.current = true;
-      if (isRightSelectPressed.current) {
-        rightHighlight.current.position.copy(selectedObject.position);
-        rightHighlight.current.visible = true;
-      } else if (!isRightSelectPressed.current) {
-        rightHighlight.current.visible = false;
-      }
-    }
-  };
+			//
+			useFrame((state, delta) => {
+				ratkObject.update();
+			});
 
-  const onBlur = (event: any) => {
-    const controller = event.target;
-    const handedness = controller.inputSource.handedness;
+			return <></>;
+		};
 
-    if (handedness === "left") {
-      isLeftPointingToObject.current = false;
-      leftHighlight.current.visible = false;
-    } else if (handedness === "right") {
-      isRightPointingToObject.current = false;
-      rightHighlight.current.visible = false;
-    }
-  };
+		return (
+			<Layout title="Social Agent">
+				<ContainerBox
+					ref={containerRef}
+					style={{
+						position: "absolute",
+						top: 0,
+						bottom: 0,
+						left: 0,
+						right: 0,
+						textAlign: "center",
+						justifyContent: "center",
+						alignItems: "center",
+					}}
+				>
+					<LoginForm />
+					<Canvas
+						style={{
+							position: "absolute",
+							zIndex: 9999,
+						}}
+						camera={{
+							fov: 50,
+							near: 0.1,
+							far: 100,
+							position: [0, 1.6, 3],
+						}}
+						gl={{ antialias: true }}
+					>
+						<XR referenceSpace="local">
+							<Hands />
+							<RatkScene />
+							<Controllers />
+							<directionalLight position={[1, 1, 1]} color={0xffffff} />
+							<OrbitControls target={[0, 1.6, 0]} />
+							<Stats />
+							<Balls
+								onSelectStart={onSelectStart}
+								onSelectEnd={onSelectEnd}
+								onHover={onHover}
+								onBlur={onBlur}
+								onSelectMissed={onSelectMissed}
+							/>
+							<Highlight highlightRef={rightHighlight} />
+							<Highlight highlightRef={leftHighlight} />
+						</XR>
+					</Canvas>
+				</ContainerBox>
+			</Layout>
+		);
+	};
 
-  const onSelectMissed = (event: any) => {
-    const controller = event.target;
-    const handedness = controller.inputSource.handedness;
-
-    if (handedness === "left") {
-      if (isLeftSelectPressed.current) {
-        if (!isLeftPointingToObject.current) {
-          leftHighlight.current.visible = false;
-          isLeftSelectPressed.current = false;
-        }
-      }
-    } else if (handedness === "right") {
-      if (isRightSelectPressed.current) {
-        if (!isRightPointingToObject.current) {
-          rightHighlight.current.visible = false;
-          isRightSelectPressed.current = false;
-        }
-      }
-    }
-  };
-
-  const RatkScene = () => {
-    // get a reference to the react-three-fiber renderer
-    // THESE ARE THE REFERENCES TO THE THREE.JS STUFF
-
-    const { gl, scene, camera, xr } = useThree();
-    const ratkObject = new RealityAccelerator(gl.xr);
-    scene.add(ratkObject.root);
-
-    useEffect(() => {
-      // WRITE THREE.JS CODE HERE
-
-      console.log("three.js scene is", scene);
-
-      console.log("three.js renderer is", gl);
-    }, []);
-
-    //
-    useFrame((state, delta) => {
-      ratkObject.update();
-    });
-
-    return <></>;
-  };
-
-  return (
-    <Layout title="Social Agent">
-      <ContainerBox
-        ref={containerRef}
-        style={{
-          position: "absolute",
-          top: 0,
-          bottom: 0,
-          left: 0,
-          right: 0,
-          textAlign: "center",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <LoginForm />
-        <Canvas
-          style={{
-            position: "absolute",
-            zIndex: 9999,
-          }}
-          camera={{
-            fov: 50,
-            near: 0.1,
-            far: 100,
-            position: [0, 1.6, 3],
-          }}
-          gl={{ antialias: true }}
-        >
-          <XR referenceSpace="local">
-            <Hands />
-            <RatkScene />
-            <Controllers />
-            <directionalLight position={[1, 1, 1]} color={0xffffff} />
-            <OrbitControls target={[0, 1.6, 0]} />
-            <Stats />
-            <Balls
-              onSelectStart={onSelectStart}
-              onSelectEnd={onSelectEnd}
-              onHover={onHover}
-              onBlur={onBlur}
-              onSelectMissed={onSelectMissed}
-            />
-            <Highlight highlightRef={rightHighlight} />
-            <Highlight highlightRef={leftHighlight} />
-          </XR>
-        </Canvas>
-      </ContainerBox>
-    </Layout>
-  );
-};
-
-export default App;
+	export default App;
