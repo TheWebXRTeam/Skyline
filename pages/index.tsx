@@ -23,6 +23,7 @@ import Layout from "../components/layouts/article";
 import { useLocalStorage } from "../components/useLocalStorage";
 
 library.add(faVrCardboard);
+const TWO_PI = 6.28318530718
 
 interface HighlightProps {
 	highlightRef: RefObject<Mesh>;
@@ -106,12 +107,13 @@ const Balls = ({
 
 	useFrame((state, delta) => {
 		//GLOBAL tick update
-		for (let i = 0; i < groups.length; i++) {
-			let bf = groups[i];
-			bf.update();
+		for(let i = 0; i < groups.length; i++){
+		  let bf = groups[i]
+		  bf.run(delta)
 		}
 	});
-
+	
+	
 	// load a gltf file to be used as geometry
 	const gltf = useLoader(GLTFLoader, "butterfly.glb");
 	const pfp = useLoader(GLTFLoader, "profilepic.glb");
@@ -124,7 +126,6 @@ const Balls = ({
 			const uniqueKey = `${item.post.author.displayName}-${i}`;
 		
 		const butterfly = clone(gltf.scene);
-		console.log("gltfbutterfly", butterfly);
 
 		// Clone animations and setup the mixer
 		const mixer = new THREE.AnimationMixer(butterfly);
@@ -151,35 +152,82 @@ const Balls = ({
 
 			const groupRef = useRef(null) as any;
 
-			useEffect(() => {
-				if (!groupRef.current) return;
-				groups.push(groupRef.current);
-				// randomize the color of the butterfly
-				(groupRef.current as any).init = () => {
-					if (!groupRef.current) return console.log("could not init");
-					groupRef.current.position.set(
-						random(-2, 2),
-						random(0.1, 1),
-						random(-2, 2)
-					);
-
-					groupRef.current.traverse((child) => {
-						console.log("traversing", child);
-						if (child instanceof Mesh) {
-							// child.material.color.setHex(Math.random() * 0xffffff);
-							//TODO randomize texture for diff bois
-						}
-					});
-				};
-
-				groupRef.current.update = (d) => {
-					console.log("update");
-				};
-
-				groupRef.current.run = (d) => { };
-
-				groupRef.current.init();
-			}, []);
+		useEffect(() => {
+			if (!groupRef.current) return;
+			let g = groupRef.current;
+			console.log("ggggggg", g);
+			groups.push(g);
+			// randomize the color of the butterfly
+			g.init = ()=>{
+				g.IDLE = 0
+				g.STATE = g.IDLE
+				g.position.set(random(-2,2),random(0.1,1),random(-2,2))
+				g.period = new THREE.Vector3(random(0,1),random(0,1),random(0,1))
+				g.initialPosition = g.position.clone()
+				g.wanderRadius = 0.1
+				g.phase = random(0,TWO_PI)
+				g.theta = 0
+	
+				// groupRef.current.traverse((child) => {
+				// console.log('traversing', child)
+				// if (child instanceof Mesh) {
+				// 	// child.material.color.setHex(Math.random() * 0xffffff);
+				// 	//TODO randomize texture for diff bois
+				// }
+				// })
+			}
+			
+			g.init()
+			g.multichord= (p,chords,offset,r)=>{
+				let val = Math.cos(p+offset)*r
+				for(let i = 0; i < chords; i++){
+				p*=2
+				r*= 0.5
+				val += Math.cos(p+offset)*r
+				}  
+				return val
+			}
+			g.hover = (d)=>{
+				g.theta += d*2
+	
+				let x = g.multichord(g.theta*g.period.x,4,g.phase,g.wanderRadius)
+				let y = g.multichord(g.theta*g.period.y,4,g.phase,g.wanderRadius)
+				let z = g.multichord(g.theta*g.period.z,4,g.phase,g.wanderRadius)
+	
+				x += g.initialPosition.x
+				y += g.initialPosition.y
+				z += g.initialPosition.z
+	
+				
+				g.position.set(x,y,z)
+			}
+		
+			g.run = (d)=>{
+				if(g.STATE == g.IDLE){
+				g.hover(d)
+				}else if(g.STATE == g.HELD){
+				g.seek(d)
+				}else{
+				
+				}
+		
+			}
+	
+			g.seek = (d)=>{
+				g.position.lerp(g.targetPosition,0.2)
+			}
+			g.grab = ()=>{
+				if(g.STATE == g.IDLE)g.STATE = g.HELD
+			}
+	
+			g.release= ()=>{
+				if(g.STATE == g.HELD)g.STATE = g.IDLE
+			}
+			g.setTarget = (t)=>{
+				g.targetPosition = t
+				//TODO - care about handedness, add an offset to target based on where we should go (or else hands have an offset null and we target that offset null? many ways to skin)
+			}		
+			}, [textures]);
 
 			profilepic.traverse((child) => {
 				if (child instanceof Mesh) {
@@ -200,6 +248,7 @@ const Balls = ({
 
 			return (
 				<group
+					ref={groupRef}
 					key={uniqueKey}
 					position={[random(-2, 2), random(0.1, 1), random(-2, 2)]}
 				>
