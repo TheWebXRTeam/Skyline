@@ -94,7 +94,6 @@ const Navbar = (props) => {
     <Header height={60} className={classes.root}>
       <Container className={classes.header}>
         <Group spacing={5} className={classes.links}>
-
           <Link
             href="https://github.com/lalalune/ratk-webxr-starter"
             scroll={false}
@@ -117,9 +116,6 @@ const Navbar = (props) => {
         <Transition transition="pop-top-right" duration={200} mounted={opened}>
           {(styles) => (
             <Paper className={classes.dropdown} withBorder style={styles}>
-              <Link href="/" scroll={false} passHref>
-                <Anchor className={classes.link}>Gears</Anchor>
-              </Link>
               <Link
                 href="https://github.com/eltruforce/webxr-examples"
                 scroll={false}
