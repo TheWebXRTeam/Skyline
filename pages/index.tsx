@@ -4,7 +4,7 @@ import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Controllers, Hands, XR, useController, useXR } from "@react-three/xr";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import { AnimationMixer, DoubleSide, MathUtils, Mesh, Object3D, Vector3 } from "three";
+import { AnimationMixer, Color, MathUtils, Mesh, Object3D, Vector3 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { clone } from "three/examples/jsm/utils/SkeletonUtils";
 import { RatkScene } from "../components/RatkScene";
@@ -298,7 +298,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
             scale={[0.07, 0.07, 0.07]}
             position={[0, 0, 0.04]}
           >
-            <meshStandardMaterial side={DoubleSide} map={base64Texture} />
+            <meshStandardMaterial map={base64Texture} emissiveMap={base64Texture} emissive={new Color(0.2, 0.2, 0.5)} />
           </mesh>
         </>
       )}
@@ -474,6 +474,7 @@ const XRScene = ({ feedData, sessionData, setSessionData }) => {
         <Hands />
         <Controllers />
         <directionalLight position={[1, 1, 1]} color={0xffffff} />
+        <ambientLight intensity={1} />
         {sessionData && textures && (
           <Butterflies
             feedData={feedData}
