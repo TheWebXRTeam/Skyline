@@ -124,28 +124,53 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       g.wanderRadius = 0.1;
       g.phase = random(0, TWO_PI);
       g.theta = 0;
+      g.foundDepencies = false
       
-      g.feedBackground = g.getObjectByName("looker")
-      g.postParent = g.getObjectByName("postParent")
-      g.feed = g.postParent.getObjectByName("feed")
-      g.feedBackground = g.postParent.getObjectByName("feedBackground")
+      // g.feedBackground = g.getObjectByName("looker")
+      // g.postParent = g.getObjectByName("postParent")  
+      // g.feed = g.postParent.getObjectByName("feed")
+      // g.feedBackground = g.postParent.getObjectByName("feedBackground")
 
-      let feedBB = g.feed.geometry.boundingBox
-      let feedwidth = Math.abs(feedBB.min.x-feedBB.max.x)
-      let feedheight =  Math.abs(feedBB.min.y-feedBB.max.y)
-      g.feedBackground.scale.set(feedwidth+0.1,feedheight+0.1,1)
-      g.feed.position.x = -feedwidth/2 
+      // let feedBB = g.feed.geometry.boundingBox
+      // let feedwidth = Math.abs(feedBB.min.x-feedBB.max.x)
+      // let feedheight =  Math.abs(feedBB.min.y-feedBB.max.y)
+      // console.log("feed bg: ". g.feed);
+      // g.feedBackground.scale.set(feedwidth+0.1,feedheight+0.1,1)
+      // g.feed.position.x = -feedwidth/2
 
-      g.feedBackground.position.y = -feedheight/2
-      g.feed.position.y = -feedheight/2
-  
-      console.log(g.feed)
-      console.log(g.feedBackground)
-      console.log(g.feed)
+      // g.feedBackground.position.y = -feedheight/2
+      // g.feed.position.y = -feedheight/2
 
-      g.postParent.visible = true
+      // g.postParent.visible = false
       
     };
+
+    g.checkForDependencies = ()=>{
+
+      g.postParent = g.getObjectByName("postParent")  
+      if(g.postParent){
+        g.feed = g.postParent.getObjectByName("feed")
+        if(g.feed){            
+          g.feedBackground = g.getObjectByName("looker")          
+          g.feedBackground = g.postParent.getObjectByName("feedBackground")
+          let feedBB = g.feed.geometry.boundingBox
+          let feedwidth = Math.abs(feedBB.min.x-feedBB.max.x)
+          let feedheight =  Math.abs(feedBB.min.y-feedBB.max.y)
+          g.feedBackground.scale.set(feedwidth+0.1,feedheight+0.1,1)
+          g.feed.position.x = -feedwidth/2
+
+          g.feedBackground.position.y = -feedheight/2
+          g.feed.position.y = -feedheight/2
+          console.log("found my dependences")
+          g.postParent.visible = true
+          g.foundDependencies = true
+        }
+
+      }
+
+      
+      
+    }
 
     g.multichord = (p, chords, offset, r) => {
       let val = Math.cos(p + offset) * r;
@@ -268,26 +293,22 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       
     }
     g.updatePost = ()=>{
-      let s = g.postParent.scale.x
-      if(g.STATE == g.HELD || true){
-        s+=0.01
-        s = Math.min(s,1)
+      if(g.STATE == g.HELD){ 
+        g.postParent.scale.set(1,1,1)
       }else{     
-        s-=0.01
-        s = Math.max(s,0)   
+        g.postParent.scale.set(0,0,0)
       }
-      s = MathUtils.smootherstep(s,0,1)
-      g.postParent.scale.set(s,s,s)
     }
     g.run = (d) => {
-      g.updatePost()
+      if(!g.foundDependencies)g.checkForDependencies()
+      else g.updatePost()
       if (g.STATE == g.IDLE) {
-	g.triggerMoveToPlane();
-  	if (g.wallTarget) {
-	  g.moveToPlane();
-	} else {
-	  g.hover(d);
-	}
+        g.triggerMoveToPlane();
+        if (g.wallTarget) {
+          g.moveToPlane();
+        } else {
+          g.hover(d);
+      }
       } else if (g.STATE == g.HELD) {
         g.seek(d);
       } else if(g.STATE == g.DEAD){
@@ -322,11 +343,13 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
 
     g.release = () => {
       if (g.STATE == g.HELD) {
+        // g.postParent.visible = false
         //TODO actually evaluate what state to transition to? Make sure we can't hurt state machine
         g.STATE = g.IDLE;
       }
     };
     g.setTarget = (t, openness) => {
+      // g.postParent.visible = true
       if(g.STATE == g.IDLE)g.STATE = g.HELD
       //track grabbedness here
       g.targetPosition = t;
@@ -619,12 +642,14 @@ const Butterflies = ({
 
       if (inputSource.handedness === "left") {
         console.log("left hand deselected");
+        selectedObjectLeft.current.release()
         selectedObjectLeft.current = null;
         lastLeftGroup?.children.forEach((child, i) => {
           if (child.name?.includes("feed")) child.visible = false;
         });
       } else if (inputSource.handedness === "right") {
         console.log("left hand deselected");
+        selectedObjectRight.current.release()
         selectedObjectRight.current = null;
 
         lastRightGroup?.children.forEach((child, i) => {
