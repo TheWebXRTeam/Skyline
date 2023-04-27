@@ -210,8 +210,17 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
         });
         const likeCount = item?.post?.likeCount;
         const pfpGeometry = (profilepic.children[0] as Mesh).geometry;
-
+		const pfpRef = useRef(null) as any;
         const base64Texture = textures[i];
+
+		const { camera } = useThree();
+
+		useFrame(() => {
+			if(pfpRef.current){
+				// the pfpRef should face the camera at all times
+				pfpRef.current.lookAt(camera.position)
+			}
+		})
 
         return (
           <group
@@ -268,8 +277,9 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
                 geometry={pfpGeometry}
                 scale={[0.07, 0.07, 0.07]}
                 position={[0, 0, 0.04]}
+				ref={pfpRef}
               >
-                <meshStandardMaterial
+                <meshBasicMaterial
                   side={THREE.DoubleSide}
                   map={base64Texture}
                 />
