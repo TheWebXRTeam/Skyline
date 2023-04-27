@@ -353,18 +353,34 @@ const Butterflies = ({
     return closestGroup;
   }
 
+  let offset = null;
+  
   useFrame((state, delta) => {
     if (!leftController) return;
     if (!rightController) return;
 
-    console.log("selectedObjectLeft.name", selectedObjectLeft.current?.name);
-
+    // Grabbing
     if (selectedObjectLeft.current && selectedObjectRight.current) {
       if (selectedObjectLeft.current === selectedObjectRight.current) {
+
         console.log("HANDLING GRAB", selectedObjectLeft.current);
-        // selectedObjectLeft.current is a three.js group
-        // iterate through all children and set visible to true
       }
+    } else if ((!selectedObjectLeft.current && selectedObjectRight.current) ||
+      (selectedObjectLeft.current && !selectedObjectRight.current)
+    ) {
+      console.log('one hand grabbing')
+      // one hand is grabbing
+      const grabbingHand = selectedObjectLeft.current ? leftController : rightController;
+      console.log('grabbingHand', grabbingHand)
+      const selectedObject = selectedObjectLeft.current || selectedObjectRight.current;
+      console.log('selectedObject', selectedObject)
+      const grabbingHandPosition = grabbingHand.controller.position;
+      console.log('grabbingHandPosition', grabbingHandPosition)
+      // calculate the difference between the startGrabPosition and the object
+      if(!offset)
+        offset = grabbingHandPosition.clone().sub(selectedObject.position);
+
+        selectedObjectLeft.current.position.copy(grabbingHandPosition.clone().sub(offset));
     }
   });
 
@@ -379,6 +395,7 @@ const Butterflies = ({
 
       if (inputSource.handedness === "left") {
         const nearestGroup = getGroup(leftController.controller.position);
+        if(!nearestGroup) return;
         console.log("nearest group", nearestGroup);
         selectedObjectLeft.current = nearestGroup;
         lastLeftGroup = nearestGroup;
@@ -387,6 +404,7 @@ const Butterflies = ({
         });
       } else if (inputSource.handedness === "right") {
         const nearestGroup = getGroup(rightController.controller.position);
+        if(!nearestGroup) return;
         console.log("nearest group", nearestGroup);
         selectedObjectRight.current = nearestGroup;
         lastRightGroup = nearestGroup;
