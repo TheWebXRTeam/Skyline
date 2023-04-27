@@ -97,7 +97,7 @@ const Balls = ({
 }) => {
 	const [feedData, setFeedData] = useLocalStorage("feedData", null);
 	const textures = useFeedDataTextures(feedData);
-
+	const {scene }= useThree()
 
 	const radius = 0.08;
 
@@ -111,6 +111,35 @@ const Balls = ({
 		  let bf = groups[i]
 		  bf.run(delta)
 		}
+
+		const ratk = scene.getObjectByName("ratk");
+		if (!ratk) return;
+	
+		const planes = ratk.children
+		if (planes.length === 0) return;
+	
+		// for (let i = 0; i < groups.length; i++) {
+		// 	if (Math.random() * 1000 > 1) continue; 
+	
+		// 	const planeIndex = Math.floor(Math.random() * planes.length);
+	
+		// 	// ugly hack. sometimes the plane position is created, but matrixWorld is not updated yet. so skip
+		// 	const zeroPos = new THREE.Vector3(0, 0, 0);
+		// 	zeroPos.applyMatrix4(planes[planeIndex].matrixWorld);
+		// 	if (zeroPos.x == 0 && zeroPos.y == 0 && zeroPos.z == 0) return; 
+	
+		// 	const planeHeight = planes[planeIndex].boundingRectangleHeight;
+		// 	const planeWidth = planes[planeIndex].boundingRectangleWidth;
+	
+		// 	const posX = Math.random() * planeWidth - planeWidth/2;
+		// 	const posZ = Math.random() * planeHeight - planeHeight/2;
+	
+		// 	const pos = new THREE.Vector3(posX, 0, posZ);
+	
+		// 	pos.applyMatrix4(planes[planeIndex].matrixWorld);
+	
+		// 	groups[i].userData.targetPosition = new Vector3(pos.x, pos.y, pos.z);
+		// }
 	});
 	
 	
@@ -199,6 +228,32 @@ const Balls = ({
 				g.position.lerp(new THREE.Vector3(x,y,z),0.1)
 			}
 
+			g.checkWalls = ()=>{
+				const ratk = scene.getObjectByName("ratk");
+				if (!ratk) return			
+				const planes = ratk.children
+				if(planes.length <1)return
+
+				const planeIndex = Math.floor(Math.random() * planes.length);
+	
+				// ugly hack. sometimes the plane position is created, but matrixWorld is not updated yet. so skip
+				const zeroPos = new THREE.Vector3(0, 0, 0);
+				zeroPos.applyMatrix4(planes[planeIndex].matrixWorld);
+				if (zeroPos.x == 0 && zeroPos.y == 0 && zeroPos.z == 0) return; 
+		
+				const planeHeight = planes[planeIndex].boundingRectangleHeight;
+				const planeWidth = planes[planeIndex].boundingRectangleWidth;
+		
+				const posX = Math.random() * planeWidth - planeWidth/2;
+				const posZ = Math.random() * planeHeight - planeHeight/2;
+		
+				const pos = new THREE.Vector3(posX, 0, posZ);
+		
+				pos.applyMatrix4(planes[planeIndex].matrixWorld);
+		
+				g.wallTarget = new THREE.Vector3(pos.x, pos.y, pos.z);
+			}
+
 			g.avoidCamera = (d)=>{
 				
 				let gcamposition = new THREE.Vector3()
@@ -225,17 +280,22 @@ const Balls = ({
 		
 			g.run = (d)=>{
 				if(g.STATE == g.IDLE){
+					if(Math.random() < 0.01)g.checkWalls()
 					g.hover(d)
 				}else if(g.STATE == g.HELD){
 					g.seek(d)
 				}else{
 				
 				}
+
+				g.goToWall(d)
 				g.initialPosition.add(g.cv) //add centroid velocity
 				g.cv.multiplyScalar(0.9)
 		
 			}
-	
+			g.goToWall = (d)=>{
+				if(g.wallTarget)g.position.lerp(g.wallTarget,0.02)
+			}
 			g.seek = (d)=>{
 				g.position.lerp(g.targetPosition,0.2)
 			}
@@ -547,12 +607,29 @@ const App = () => {
 		// THESE ARE THE REFERENCES TO THE THREE.JS STUFF
 
 		const { gl, scene, camera, xr } = useThree();
-		const ratkObject = new RealityAccelerator(gl.xr);
-		scene.add(ratkObject.root);
+		let ratkObject = null;
+
+		
 
 		useEffect(() => {
 			// WRITE THREE.JS CODE HERE
 
+			ratkObject = new RealityAccelerator(gl.xr);
+			ratkObject.root.name = 'ratk';
+			console.log("add ratk");
+			
+			
+			ratkObject.onPlaneAdded = (plane) => {
+				console.log(plane)
+				const mesh = plane.planeMesh;
+				mesh.material = new THREE.MeshBasicMaterial({
+				  transparent: true,
+				  opacity: 0.9,
+				  color: Math.random() * 0xffffff,
+				  side: THREE.DoubleSide,
+				});
+			};
+			scene.add(ratkObject.root);
 			console.log("three.js scene is", scene);
 
 			console.log("three.js renderer is", gl);
@@ -560,6 +637,7 @@ const App = () => {
 
 		//
 		useFrame((state, delta) => {
+			if (ratkObject)
 			ratkObject.update();
 		});
 
