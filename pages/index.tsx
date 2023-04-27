@@ -4,46 +4,53 @@ import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Controllers, Hands, XR, useController, useXR } from "@react-three/xr";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import { AnimationMixer, DoubleSide, MathUtils, Mesh, Vector3 } from "three";
+import { AnimationMixer, DoubleSide, MathUtils, Mesh, Object3D, Vector3 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { clone } from "three/examples/jsm/utils/SkeletonUtils";
+import { RatkScene } from "../components/RatkScene";
 import { useFeedDataTextures } from "../lib/useFeedDataTextures";
 import { useLocalStorage } from "../lib/useLocalStorage";
-import { RatkScene } from "../components/RatkScene";
 
 const TWO_PI = 6.28318530718;
 
 const LoginForm = dynamic(() => import("../components/Login"), { ssr: false });
 
 const App = () => {
-  console.log('App render')
+  console.log("App render");
   const containerRef = useRef<HTMLDivElement>(null);
   const [feedData, setFeedData] = useLocalStorage("feedData", null);
   const [sessionData, setSessionData] = useState(null);
 
   return (
-      <ContainerBox
-        ref={containerRef}
-        style={{
-          position: "absolute",
-          top: 0,
-          bottom: 0,
-          left: 0,
-          right: 0,
-          textAlign: "center",
-          justifyContent: "center",
-          alignItems: "center",
-          zIndex: 100000,
-        }}
-      >
-        <LoginForm />
-        <XRScene sessionData={sessionData} setSessionData={setSessionData} feedData={feedData} />
-      </ContainerBox>
+    <ContainerBox
+      ref={containerRef}
+      style={{
+        position: "absolute",
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        textAlign: "center",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 100000,
+      }}
+    >
+      <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 100000 }}>
+      <LoginForm />
+      </div>
+      <XRScene
+        sessionData={sessionData}
+        setSessionData={setSessionData}
+        feedData={feedData}
+      />
+    </ContainerBox>
   );
 };
 
 const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
-  console.log('Butterfly render')
+  console.log("Butterfly render");
+  const { scene } = useThree();
   const uniqueKey = `${item.post.author.displayName}-${i}`;
   const random = (min, max) => Math.random() * (max - min) + min;
 
@@ -57,7 +64,10 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
     gltf.animations.forEach((animation) => {
       mixer.clipAction(animation).play();
       // add an offset to the animation
-      mixer.clipAction(animation).time = MathUtils.randFloat(0, animation.duration);
+      mixer.clipAction(animation).time = MathUtils.randFloat(
+        0,
+        animation.duration
+      );
     });
   }
 
@@ -122,6 +132,34 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       g.position.lerp(new Vector3(x, y, z), 0.1);
     };
 
+    g.checkWalls = ()=>{
+      const ratk = scene.getObjectByName("ratk");
+      if (!ratk) return			
+      const planes = ratk.children as Object3D[];
+      if(planes.length <1)return
+
+      const planeIndex = Math.floor(Math.random() * planes.length);
+
+      // ugly hack. sometimes the plane position is created, but matrixWorld is not updated yet. so skip
+      const zeroPos = new Vector3(0, 0, 0);
+      zeroPos.applyMatrix4(planes[planeIndex].matrixWorld);
+      if (zeroPos.x == 0 && zeroPos.y == 0 && zeroPos.z == 0) return; 
+
+      const planeHeight = planes[planeIndex].boundingRectangleHeight;
+      const planeWidth = planes[planeIndex].boundingRectangleWidth;
+
+      console.log('planeHeight', planeHeight)
+
+      const posX = Math.random() * planeWidth - planeWidth/2;
+      const posZ = Math.random() * planeHeight - planeHeight/2;
+
+      const pos = new Vector3(posX, 0, posZ);
+
+      pos.applyMatrix4(planes[planeIndex].matrixWorld);
+
+      g.wallTarget = new Vector3(pos.x, pos.y, pos.z);
+    }
+
     g.avoidCamera = (d) => {
       let gcamposition = new Vector3();
       g.cam.getWorldPosition(gcamposition);
@@ -155,6 +193,10 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       g.initialPosition.add(g.cv); //add centroid velocity
       g.cv.multiplyScalar(0.9);
     };
+
+    g.goToWall = (d)=>{
+      if(g.wallTarget)g.position.lerp(g.wallTarget,0.02)
+    }
 
     g.seek = (d) => {
       g.position.lerp(g.targetPosition, 0.2);
@@ -216,7 +258,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
           {/* @ts-ignore */}
           <Text
             key={`${uniqueKey}-text1`}
-            name={'feed'}
+            name={"feed"}
             position={[0.3, 0, 0]}
             fontSize={0.03}
             maxWidth={1}
@@ -234,7 +276,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
           </Text>
           <Text
             key={`${uniqueKey}-text2`}
-            name={'likes'}
+            name={"likes"}
             position={[2, 0, 0]}
             fontSize={0.03}
             maxWidth={0.5}
@@ -263,8 +305,13 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
   );
 };
 
-const Butterflies = ({ feedData, selectedObjectRight, selectedObjectLeft, textures }) => {
-  console.log('Butterflies render')
+const Butterflies = ({
+  feedData,
+  selectedObjectRight,
+  selectedObjectLeft,
+  textures,
+}) => {
+  console.log("Butterflies render");
   const { session } = useXR();
   const { scene } = useThree();
 
@@ -370,15 +417,15 @@ const Butterflies = ({ feedData, selectedObjectRight, selectedObjectLeft, textur
     session.addEventListener("selectend", selectEndListener);
 
     const ratk = scene.getObjectByName("ratk");
-		if (!ratk) return;
+    if (!ratk) return;
 
-		const planes = ratk.children
-    console.log('planes', planes)
+    const planes = ratk.children;
+    console.log("planes", planes);
 
     return () => {
-      session.removeEventListener("selectstart", selectStartListener)
-      session.removeEventListener("selectend", selectEndListener)
-    }
+      session.removeEventListener("selectstart", selectStartListener);
+      session.removeEventListener("selectend", selectEndListener);
+    };
   }, [session]);
 
   const butterflies = !feedData
@@ -398,45 +445,45 @@ const Butterflies = ({ feedData, selectedObjectRight, selectedObjectLeft, textur
   return <>{butterflies}</>;
 };
 
-const XRScene = ({feedData, sessionData, setSessionData}) => {
+const XRScene = ({ feedData, sessionData, setSessionData }) => {
   const selectedObjectRight = useRef(null);
   const selectedObjectLeft = useRef(null);
   const textures = useFeedDataTextures(feedData);
 
   return (
-      <Canvas
-        style={{
-          position: "absolute",
-          zIndex: 9999,
+    <Canvas
+      style={{
+        position: "absolute",
+        zIndex: 9999,
+      }}
+      camera={{
+        fov: 50,
+        near: 0.1,
+        far: 100,
+        position: [0, 1.6, 3],
+      }}
+      gl={{ antialias: true }}
+    >
+      <XR
+        referenceSpace="local"
+        onSessionStart={(event) => {
+          setSessionData(true);
         }}
-        camera={{
-          fov: 50,
-          near: 0.1,
-          far: 100,
-          position: [0, 1.6, 3],
-        }}
-        gl={{ antialias: true }}
       >
-        <XR
-          referenceSpace="local"
-          onSessionStart={(event) => {
-            setSessionData(true);
-          }}
-        >
-          <Hands />
-          <RatkScene />
-          <Controllers />
-          <directionalLight position={[1, 1, 1]} color={0xffffff} />
-          {sessionData && textures && (
-            <Butterflies
-              feedData={feedData}
-              selectedObjectLeft={selectedObjectLeft}
-              selectedObjectRight={selectedObjectRight}
-			  textures={textures}
-            />
-          )}
-        </XR>
-      </Canvas>
+        <Hands />
+        <RatkScene />
+        <Controllers />
+        <directionalLight position={[1, 1, 1]} color={0xffffff} />
+        {sessionData && textures && (
+          <Butterflies
+            feedData={feedData}
+            selectedObjectLeft={selectedObjectLeft}
+            selectedObjectRight={selectedObjectRight}
+            textures={textures}
+          />
+        )}
+      </XR>
+    </Canvas>
   );
 };
 

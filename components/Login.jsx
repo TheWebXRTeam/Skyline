@@ -1,6 +1,6 @@
 import { BskyAgent } from "@atproto/api";
 import { useEffect, useState, useRef } from "react";
-import { XRButton } from "@react-three/xr";
+import { XRButton, useXR } from "@react-three/xr";
 import { useLocalStorage } from "../lib/useLocalStorage";
 
 import {
@@ -17,8 +17,6 @@ function LoginForm() {
   const [sessionData, setSessionData] = useLocalStorage("sessionData", null);
   const [feedData, setFeedData] = useLocalStorage("feedData", null);
   const [password, setPassword] = useState("");
-
-  const [loggedIn, setLoggedIn] = useState(false);
 
   const buttonRef = useRef();
 
@@ -103,7 +101,6 @@ function LoginForm() {
           </Paper>
         ) : (
           <>
-          {!loggedIn && (
             <XRButton
               /* The type of `XRSession` to create */
               mode={"AR"}
@@ -136,15 +133,21 @@ function LoginForm() {
                   "plane-detection",
                   "hit-test",
                 ],
-                children: (status) => {
-                  status !== "entered" ? <>Continue as {username}</> : <>Return to Browser</>
+              }}
+              children={(status) => {
+                if (status === "unsupported") {
+                  return "AR not supported";
+                }
+                if (status === "exited") {
+                  return `Join as ${username}`;
+                }
+                if (status === "entered") {
+                  return `Return to Browser`;
                 }
               }}
             >
               {/* Can accept regular DOM children and has an optional callback with the XR button status (unsupported, exited, entered) */}
-              
             </XRButton>
-          )}
             {/* add logout button */}
             <Button
               fullWidth
