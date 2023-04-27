@@ -196,12 +196,13 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
     };
 
     g.goToWall = (d)=>{
-      if(g.wallTarget)g.position.lerp(g.wallTarget,0.02)
+      if(g.wallTarget) g.position.lerp(g.wallTarget,0.2 * d)
     }
 
     g.seek = (d) => {
-      g.position.lerp(g.targetPosition, 0.2);
+      g.position?.lerp(g.targetPosition, 0.2);
     };
+
     g.grab = () => {
       if (g.STATE == g.IDLE) g.STATE = g.HELD;
     };
@@ -260,7 +261,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
           <Text
             key={`${uniqueKey}-text1`}
             name={"feed"}
-            position={[-0.15, -0.2, 0]}
+            position={[-0.15, -0.2, 0]} // TODO: might want to offset Z a bit
             fontSize={0.03}
             maxWidth={0.4}
             lineHeight={1}
@@ -280,11 +281,12 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
           <Text
             key={`${uniqueKey}-text2`}
             name={"likes"}
-            position={[-0.15, -0.2, 0]}
+            position={[-0.15, -0.2, 0]}  // TODO: might want to offset Z a bit
             fontSize={0.03}
             maxWidth={0.4}
             lineHeight={1}
             letterSpacing={0.02}
+            depthOffset={-1}
             anchorX={0}
             visible={false}
             // @ts-ignore
@@ -292,8 +294,8 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
             height={0.1}
             color={0x000000}
             textAlign={"center"}
-			outlineWidth={0.001}
-			outlineColor={0xffffff}
+        outlineWidth={0.001}
+        outlineColor={0xffffff}
           >
             {likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
           </Text>
@@ -368,11 +370,18 @@ const Butterflies = ({
 
     // Grabbing
     if (selectedObjectLeft.current && selectedObjectRight.current) {
+      // Grabbing the same object
       if (selectedObjectLeft.current === selectedObjectRight.current) {
+        selectedObjectLeft.current.grab();
 
-        console.log("HANDLING GRAB", selectedObjectLeft.current);
+      } else {
+        // Grabbing different objects
+
+
       }
-    } else if ((!selectedObjectLeft.current && selectedObjectRight.current) ||
+    }
+    // one hand is grabbing
+    else if ((!selectedObjectLeft.current && selectedObjectRight.current) ||
       (selectedObjectLeft.current && !selectedObjectRight.current)
     ) {
       console.log('one hand grabbing')
@@ -387,7 +396,9 @@ const Butterflies = ({
       if(!offset)
         offset = grabbingHandPosition.clone().sub(selectedObject.position);
 
-        selectedObjectLeft.current.position.copy(grabbingHandPosition.clone().sub(offset));
+        selectedObject.position.copy(grabbingHandPosition.clone().sub(offset));
+    } else if (!selectedObjectLeft.current && !selectedObjectRight.current) {
+      offset = null;
     }
   });
 
