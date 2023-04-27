@@ -126,6 +126,9 @@ function LoginForm() {
                   "bounded-floor",
                   "hand-tracking",
                   "layers",
+                  "anchors",
+                  "plane-detection",
+                  "hit-test",
                 ],
               }}
             >

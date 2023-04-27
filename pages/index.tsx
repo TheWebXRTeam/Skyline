@@ -7,7 +7,6 @@ import { useEffect, useRef, useState } from "react";
 import { AnimationMixer, DoubleSide, MathUtils, Mesh, Vector3 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { clone } from "three/examples/jsm/utils/SkeletonUtils";
-import { RatkScene } from "../components/RatkScene";
 import { useFeedDataTextures } from "../lib/useFeedDataTextures";
 import { useLocalStorage } from "../lib/useLocalStorage";
 
@@ -16,6 +15,7 @@ const TWO_PI = 6.28318530718;
 const LoginForm = dynamic(() => import("../components/Login"), { ssr: false });
 
 const App = () => {
+  console.log('App render')
   const containerRef = useRef<HTMLDivElement>(null);
   const [feedData, setFeedData] = useLocalStorage("feedData", null);
   const [sessionData, setSessionData] = useState(null);
@@ -44,6 +44,7 @@ const App = () => {
 };
 
 const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
+  console.log('Butterfly render')
   const uniqueKey = `${item.post.author.displayName}-${i}`;
   const random = (min, max) => Math.random() * (max - min) + min;
 
@@ -56,6 +57,8 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
   if (gltf.animations && gltf.animations.length > 0) {
     gltf.animations.forEach((animation) => {
       mixer.clipAction(animation).play();
+      // add an offset to the animation
+      mixer.clipAction(animation).time = MathUtils.randFloat(0, animation.duration);
     });
   }
 
@@ -258,8 +261,10 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
 };
 
 const Butterflies = ({ feedData, selectedObjectRight, selectedObjectLeft }) => {
+  console.log('Butterflies render')
   const textures = useFeedDataTextures(feedData);
   const { session } = useXR();
+  const { scene } = useThree();
 
   const leftController = useController("left");
   const rightController = useController("right");
@@ -314,7 +319,7 @@ const Butterflies = ({ feedData, selectedObjectRight, selectedObjectLeft }) => {
     let lastLeftGroup = null;
     let lastRightGroup = null;
 
-    session.addEventListener("selectstart", (event) => {
+    const selectStartListener = (event) => {
       console.log("something selected", event);
       const inputSource = event.inputSource;
 
@@ -337,9 +342,9 @@ const Butterflies = ({ feedData, selectedObjectRight, selectedObjectLeft }) => {
       }
 
       //
-    });
+    };
 
-    session.addEventListener("selectend", (event) => {
+    const selectEndListener = (event) => {
       const inputSource = event.inputSource;
 
       if (inputSource.handedness === "left") {
@@ -358,7 +363,20 @@ const Butterflies = ({ feedData, selectedObjectRight, selectedObjectLeft }) => {
       }
 
       //
-    });
+    };
+    session.addEventListener("selectstart", selectStartListener);
+    session.addEventListener("selectend", selectEndListener);
+
+    const ratk = scene.getObjectByName("ratk");
+		if (!ratk) return;
+
+		const planes = ratk.children
+    console.log('planes', planes)
+
+    return () => {
+      session.removeEventListener("selectstart", selectStartListener)
+      session.removeEventListener("selectend", selectEndListener)
+    }
   }, [session]);
 
   const butterflies = !feedData
@@ -379,6 +397,7 @@ const Butterflies = ({ feedData, selectedObjectRight, selectedObjectLeft }) => {
 };
 
 const XRScene = ({feedData, sessionData, setSessionData}) => {
+  console.log('XRScene render')
   const selectedObjectRight = useRef(null);
   const selectedObjectLeft = useRef(null);
 
