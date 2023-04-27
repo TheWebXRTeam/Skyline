@@ -264,13 +264,13 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
             maxWidth={1}
             lineHeight={1}
             letterSpacing={0.02}
-            anchorX={2.3}
+            anchorX={0}
             visible={false}
             // @ts-ignore
             wrap={0.1}
             height={0.1}
             color={0x000000}
-            textAlign={"left"}
+            textAlign={"center"}
           >
             {item?.post?.author?.displayName + ": " + item.post.record.text}
           </Text>
@@ -282,7 +282,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
             maxWidth={0.5}
             lineHeight={1}
             letterSpacing={0.02}
-            anchorX={2.3}
+            anchorX={0}
             visible={false}
             // @ts-ignore
             wrap={0.1}
@@ -453,7 +453,6 @@ const XRScene = ({ feedData, sessionData, setSessionData }) => {
   return (
     <Canvas
       style={{
-        position: "absolute",
         zIndex: 9999,
       }}
       camera={{
