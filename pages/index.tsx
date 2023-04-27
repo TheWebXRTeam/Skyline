@@ -110,12 +110,17 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
     if (selectedObjectLeft.current && selectedObjectRight.current) {
       if (selectedObjectLeft.current === selectedObjectRight.current) {
         console.log("HANDLING GRAB", selectedObjectLeft.current);
+		// selectedObjectLeft.current is a three.js group
+		// iterate through all children and set visible to true
       }
     }
   });
 
   useEffect(() => {
     if (session) {
+		let lastLeftGroup = null;
+		let lastRightGroup = null;
+
       session.addEventListener("selectstart", (event) => {
         console.log("something selected", event);
         const inputSource = event.inputSource;
@@ -124,10 +129,21 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
           const nearestGroup = getGroup(leftController.controller.position);
           console.log("nearest group", nearestGroup);
           selectedObjectLeft.current = nearestGroup;
+		  lastLeftGroup = nearestGroup
+		  nearestGroup.children.forEach((child, i) => {
+			if(i !== 0)
+			child.visible = true;
+		});
+
         } else if (inputSource.handedness === "right") {
           const nearestGroup = getGroup(rightController.controller.position);
           console.log("nearest group", nearestGroup);
           selectedObjectRight.current = nearestGroup;
+			lastRightGroup = nearestGroup
+		  nearestGroup.children.forEach((child, i) => {
+			if(i !== 0)
+			child.visible = true;
+		});
         }
 
         //
@@ -139,9 +155,18 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
         if (inputSource.handedness === "left") {
           console.log("left hand deselected");
           selectedObjectLeft.current = null;
+		  lastLeftGroup?.children.forEach((child, i) => {
+			if(i !== 0)
+			child.visible = false;
+		});
         } else if (inputSource.handedness === "right") {
           console.log("left hand deselected");
           selectedObjectRight.current = null;
+
+		  lastRightGroup?.children.forEach((child, i) => {
+			if(i !== 0)
+			child.visible = false;
+		});
         }
 
         //
@@ -247,6 +272,7 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
                   letterSpacing={0.02}
                   anchorX={2.3}
                   // @ts-ignore
+				  visible={false}
                   wrap={0.1}
                   height={0.1}
                   color={0x000000}
@@ -265,6 +291,7 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
                 lineHeight={1}
                 letterSpacing={0.02}
                 anchorX={2.3}
+				visible={false}
                 // @ts-ignore
                 wrap={0.1}
                 height={0.1}
