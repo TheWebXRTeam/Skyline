@@ -272,6 +272,8 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
             height={0.1}
             color={0x000000}
             textAlign={"center"}
+			outlineWidth={0.001}
+			outlineColor={0xffffff}
           >
             {item?.post?.author?.displayName + ":\n" + item.post.record.text}
           </Text>
@@ -290,6 +292,8 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
             height={0.1}
             color={0x000000}
             textAlign={"center"}
+			outlineWidth={0.001}
+			outlineColor={0xffffff}
           >
             {likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
           </Text>
