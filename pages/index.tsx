@@ -109,20 +109,21 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
     // console.log("ggggggg", g);
     groups.push(g);
     // randomize the color of the butterfly
-    g.init = () => {
+    g.init = () => {      
       g.cv = new Vector3();
       g.cam = camera;
       g.IDLE = 0;
       g.DEAD = 1;
-      g.HELD = 3;
       g.RESPAWNING = 2;
-
+      g.HELD = 3;
       g.STATE = g.DEAD
       g.initializePosition()
       g.period = new Vector3(random(0, 1), random(0, 1), random(0, 1));
       g.wanderRadius = 0.1;
       g.phase = random(0, TWO_PI);
       g.theta = 0;
+      
+      g.postParent = g.getObjectByName("postparent")
     };
 
     g.multichord = (p, chords, offset, r) => {
@@ -212,12 +213,13 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
         g.cv.add(headavoid);
       } 
     }; 
-    g.initializePosition = ()=>{
-      
-      g.position.set(random(-2, 2), random(0.1, 1), random(-2, 2));
+    g.initializePosition = ()=>{      
+      g.position.set(random(-2, 2), random(-0.25,0.25), random(-2, 2));
       g.scale.set(0,0,0)
       g.initialPosition = g.position.clone();
-      g.fade = 0   
+      g.fade = 0  
+      g.postParent.scale.set(0,0,0) 
+      g.postParent.visible = false
     }
 
     g.disappear=()=>{
@@ -236,8 +238,20 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
         g.scale.set(s,s,s) 
       
     }
+    g.updatePost = ()=>{
+      let s = g.postParent.scale.x
+      if(g.STATE == g.HELD){
+        s+=0.01
+        s = Math.min(s,1)
+      }else{     
+        s-=0.01
+        s = Math.max(s,0)   
+      }
+      s = MathUtils.smootherstep(s,0,1)
+      g.postParent.scale.set(s,s,s)
+    }
     g.run = (d) => {
-      
+      g.updatePost()
       if (g.STATE == g.IDLE) {
         g.hover(d);
       } else if (g.STATE == g.HELD) {
@@ -266,18 +280,18 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       g.position?.lerp(g.targetPosition, 0.1);
     };
 
-    g.grab = () => {
-      if (g.STATE == g.IDLE) g.STATE = g.HELD;
-    };
-
     g.release = () => {
-      if (g.STATE == g.HELD) g.STATE = g.IDLE;
+      if (g.STATE == g.HELD) {
+        //TODO actually evaluate what state to transition to? Make sure we can't hurt state machine
+        g.STATE = g.IDLE;
+      }
     };
     g.setTarget = (t, openness) => {
+      if(g.STATE == g.IDLE)g.STATE = g.HELD
+      //track grabbedness here
       g.targetPosition = t;
       //TODO - care about handedness, add an offset to target based on where we should go (or else hands have an offset null and we target that offset null? many ways to skin)
     };
-    
     g.init();
   }, [textures]);
 
@@ -541,18 +555,18 @@ const Butterflies = ({
         console.log("nearest group", nearestGroup);
         selectedObjectLeft.current = nearestGroup;
         lastLeftGroup = nearestGroup;
-        nearestGroup.children.forEach((child, i) => {
-          if (child.name?.includes("feed")) child.visible = true;
-        });
+        // nearestGroup.children.forEach((child, i) => {
+        //   if (child.name?.includes("feed")) child.visible = true;
+        // });
       } else if (inputSource.handedness === "right") {
         const nearestGroup = getGroup(rightController.controller.position);
         if (!nearestGroup) return;
         console.log("nearest group", nearestGroup);
         selectedObjectRight.current = nearestGroup;
         lastRightGroup = nearestGroup;
-        nearestGroup.children.forEach((child, i) => {
-          if (child.name?.includes("feed")) child.visible = true;
-        });
+        // nearestGroup.children.forEach((child, i) => {
+        //   if (child.name?.includes("feed")) child.visible = true;
+        // });
       }
 
       //
