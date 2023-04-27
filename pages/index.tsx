@@ -145,8 +145,9 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       zeroPos.applyMatrix4(planes[planeIndex].matrixWorld);
       if (zeroPos.x == 0 && zeroPos.y == 0 && zeroPos.z == 0) return; 
 
-      const planeHeight = planes[planeIndex].boundingRectangleHeight;
-      const planeWidth = planes[planeIndex].boundingRectangleWidth;
+      // TODO: Forcing these so any so we can build but need to figure out why they are not there
+      const planeHeight = (planes[planeIndex] as any).boundingRectangleHeight;
+      const planeWidth = (planes[planeIndex] as any).boundingRectangleWidth;
 
       console.log('planeHeight', planeHeight)
 
