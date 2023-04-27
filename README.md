@@ -2,7 +2,7 @@
 
 Social media doesn’t have to be an endless scrolling stream. It can be delightful, physical and fun. We invite you to come on this journey with us and explore a future rich with friendly data.
 
-Skyline is a new kind of social media, built on the open source AT protocol. Currently Skyline pulls in data from Bluesky. A more advanced implementation may be self hosted and enable rich media and interaction, including 3D models, minigames, music and so much more-- all in your browser.
+Skyline is a new kind of social media app, built on the AT protocol. Currently Skyline pulls in data from Bluesky. A more advanced implementation may be self hosted and enable rich media and interaction, including 3D models, minigames, music and so much more-- all in your browser.
 
 ## Tech Stack
 - React.js
@@ -11,7 +11,7 @@ Skyline is a new kind of social media, built on the open source AT protocol. Cur
 - Next.js
 - Mantine UI
 - Three.js
-- React Three Fiber
+- React Three Fibe
 
 ## Installation and Usage
 
