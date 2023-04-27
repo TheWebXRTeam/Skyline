@@ -265,9 +265,8 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
   );
 };
 
-const Butterflies = ({ feedData, selectedObjectRight, selectedObjectLeft }) => {
+const Butterflies = ({ feedData, selectedObjectRight, selectedObjectLeft, textures }) => {
   console.log('Butterflies render')
-  const textures = useFeedDataTextures(feedData);
   const { session } = useXR();
   const { scene } = useThree();
 
@@ -405,6 +404,7 @@ const XRScene = ({feedData, sessionData, setSessionData}) => {
   console.log('XRScene render')
   const selectedObjectRight = useRef(null);
   const selectedObjectLeft = useRef(null);
+  const textures = useFeedDataTextures(feedData);
 
   return (
     <div style={{ position: "fixed", width: "100%", height: "100%" }}>
@@ -431,11 +431,12 @@ const XRScene = ({feedData, sessionData, setSessionData}) => {
           <RatkScene />
           <Controllers />
           <directionalLight position={[1, 1, 1]} color={0xffffff} />
-          {sessionData && (
+          {sessionData && textures && (
             <Butterflies
               feedData={feedData}
               selectedObjectLeft={selectedObjectLeft}
               selectedObjectRight={selectedObjectRight}
+			  textures={textures}
             />
           )}
         </XR>
