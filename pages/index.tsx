@@ -124,6 +124,8 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       g.theta = 0;
       
       g.postParent = g.getObjectByName("postparent")
+      g.postParent.visible = true
+      
     };
 
     g.multichord = (p, chords, offset, r) => {
@@ -218,8 +220,8 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       g.scale.set(0,0,0)
       g.initialPosition = g.position.clone();
       g.fade = 0  
-      g.postParent.scale.set(0,0,0) 
-      g.postParent.visible = false
+      // g.postParent.scale.set(0,0,0) 
+      // g.postParent.visible = false
     }
 
     g.disappear=()=>{
@@ -240,7 +242,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
     }
     g.updatePost = ()=>{
       let s = g.postParent.scale.x
-      if(g.STATE == g.HELD){
+      if(g.STATE == g.HELD || true){
         s+=0.01
         s = Math.min(s,1)
       }else{     
@@ -337,47 +339,64 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       {!base64Texture ? null : (
         <>
           {/* @ts-ignore */}
-          <Text
-            key={`${uniqueKey}-text1`}
-            name={"feed"}
-            position={[-0.15, -0.2, 0]} // TODO: might want to offset Z a bit
-            fontSize={0.03}
-            maxWidth={0.4}
-            lineHeight={1}
-            letterSpacing={0.02}
-            anchorX={0}
-            visible={false}
-            // @ts-ignore
-            wrap={0.1}
-            height={0.1}
-            color={0x000000}
-            textAlign={"center"}
-            outlineWidth={0.001}
-            outlineColor={0xffffff}
-          >
-            {item?.post?.author?.displayName + ":\n" + item.post.record.text}
-          </Text>
-          <Text
-            key={`${uniqueKey}-text2`}
-            name={"likes"}
-            position={[-0.15, -0.2, 0]} // TODO: might want to offset Z a bit
-            fontSize={0.03}
-            maxWidth={0.4}
-            lineHeight={1}
-            letterSpacing={0.02}
-            depthOffset={-1}
-            anchorX={0}
-            visible={false}
-            // @ts-ignore
-            wrap={0.1}
-            height={0.1}
-            color={0x000000}
-            textAlign={"center"}
-            outlineWidth={0.001}
-            outlineColor={0xffffff}
-          >
-            {likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
-          </Text>
+					<mesh
+						key={`${uniqueKey}-mesh`}
+						geometry={pfpGeometry}
+						position={[0, -0.4, -0.03]} // TODO: might want to offset Z a bit
+						name={"postparent"}
+						visible={false}
+						ref={pfpRef}
+					>
+						<meshBasicMaterial
+							key={`${uniqueKey}-material`}
+							color={0x000000}
+							transparent={true}
+						/>
+						<planeBufferGeometry
+							key={`${uniqueKey}-geometry`}
+							attach="geometry"
+							args={[0.8, 0.5]}
+						/>
+						<Text
+							key={`${uniqueKey}-text1`}
+							name={"feed"}
+							position={[-0.15, 0, .15]} // TODO: might want to offset Z a bit
+							fontSize={0.03}
+							maxWidth={0.4}
+							lineHeight={1.3}
+							letterSpacing={0.02}
+							anchorX={0}
+							// @ts-ignore
+							wrap={0.1}
+							height={0.1}
+							color={0xffffff}
+							textAlign={"center"}
+							outlineWidth={0.001}
+							outlineColor={0x000000}
+						>
+							{item?.post?.author?.displayName + ":\n" + item.post.record.text}
+						</Text>
+						<Text
+							key={`${uniqueKey}-text2`}
+							name={"likes"}
+							position={[1.5, 0, .15]} // TODO: might want to offset Z a bit
+							fontSize={0.03}
+							maxWidth={0.4}
+							lineHeight={1.3}
+							letterSpacing={0.02}
+							depthOffset={-1}
+							anchorX={0}
+							// @ts-ignore
+							wrap={0.1}
+							height={0.1}
+							color={0xffffff}
+							textAlign={"center"}
+							outlineWidth={0.001}
+							outlineColor={0x000000}
+						>
+							{likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
+						</Text>
+					</mesh>
           <mesh
             geometry={pfpGeometry}
             scale={[0.07, 0.07, 0.07]}
