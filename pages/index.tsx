@@ -221,60 +221,60 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
             position={[random(-2, 2), random(0.1, 1), random(-2, 2)]}
           >
             {/* add cube to the scene */}
-                <>
-                  <primitive
-                    key={`${uniqueKey}-primitive`}
-                    scale={[0.08, 0.08, 0.08]}
-                    position={[0, 0, 0]}
-                    object={butterfly}
-                  />
-                  {!base64Texture ? null : (
-                    <Text
-                      key={`${uniqueKey}-text1`}
-                      position={[0.3, 0, 0]}
-                      fontSize={0.03}
-                      maxWidth={1}
-                      lineHeight={1}
-                      letterSpacing={0.02}
-                      anchorX={2.3}
-                      // @ts-ignore
-                      wrap={0.1}
-                      height={0.1}
-                      color={0x000000}
-                      textAlign={"left"}
-                    >
-                      {item?.post?.author?.displayName +
-                        ": " +
-                        item.post.record.text}
-                    </Text>
-                  )}
-                  <Text
-                    key={`${uniqueKey}-text2`}
-                    position={[2, 0, 0]}
-                    fontSize={0.03}
-                    maxWidth={0.5}
-                    lineHeight={1}
-                    letterSpacing={0.02}
-                    anchorX={2.3}
-                    // @ts-ignore
-                    wrap={0.1}
-                    height={0.1}
-                    color={0x000000}
-                    textAlign={"center"}
-                  >
-                    {likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
-                  </Text>
-                  <mesh
-                    geometry={pfpGeometry}
-                    scale={[0.07, 0.07, 0.07]}
-                    position={[0, 0, 0.04]}
-                  >
-                    <meshStandardMaterial
-                      side={THREE.DoubleSide}
-                      map={base64Texture}
-                    />
-                  </mesh>
-                </>
+            <>
+              <primitive
+                key={`${uniqueKey}-primitive`}
+                scale={[0.08, 0.08, 0.08]}
+                position={[0, 0, 0]}
+                object={butterfly}
+              />
+              {!base64Texture ? null : (
+                <Text
+                  key={`${uniqueKey}-text1`}
+                  position={[0.3, 0, 0]}
+                  fontSize={0.03}
+                  maxWidth={1}
+                  lineHeight={1}
+                  letterSpacing={0.02}
+                  anchorX={2.3}
+                  // @ts-ignore
+                  wrap={0.1}
+                  height={0.1}
+                  color={0x000000}
+                  textAlign={"left"}
+                >
+                  {item?.post?.author?.displayName +
+                    ": " +
+                    item.post.record.text}
+                </Text>
+              )}
+              <Text
+                key={`${uniqueKey}-text2`}
+                position={[2, 0, 0]}
+                fontSize={0.03}
+                maxWidth={0.5}
+                lineHeight={1}
+                letterSpacing={0.02}
+                anchorX={2.3}
+                // @ts-ignore
+                wrap={0.1}
+                height={0.1}
+                color={0x000000}
+                textAlign={"center"}
+              >
+                {likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
+              </Text>
+              <mesh
+                geometry={pfpGeometry}
+                scale={[0.07, 0.07, 0.07]}
+                position={[0, 0, 0.04]}
+              >
+                <meshStandardMaterial
+                  side={THREE.DoubleSide}
+                  map={base64Texture}
+                />
+              </mesh>
+            </>
           </group>
         );
       });
