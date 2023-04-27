@@ -76,6 +76,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
   const mixer = new AnimationMixer(butterfly);
   mixers.push(mixer);
 
+  console.log("animations", gltf.animations);
   if (gltf.animations && gltf.animations.length > 0) {
     gltf.animations.forEach((animation) => {
       mixer.clipAction(animation).play();
@@ -150,20 +151,27 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       g.postParent = g.getObjectByName("postParent")  
       if(g.postParent){
         g.feed = g.postParent.getObjectByName("feed")
-        if(g.feed){            
-          g.feedBackground = g.getObjectByName("looker")          
-          g.feedBackground = g.postParent.getObjectByName("feedBackground")
-          let feedBB = g.feed.geometry.boundingBox
-          let feedwidth = Math.abs(feedBB.min.x-feedBB.max.x)
-          let feedheight =  Math.abs(feedBB.min.y-feedBB.max.y)
-          g.feedBackground.scale.set(feedwidth+0.1,feedheight+0.1,1)
-          g.feed.position.x = -feedwidth/2
+        if(g.feed){          
+          g.feedBackground = g.postParent.getObjectByName("feedBackground")           
+          if(g.feedBackground){
+            setTimeout(function(){
+              let feedBB = g.feed.geometry.boundingBox
+              let feedwidth = Math.abs(feedBB.min.x-feedBB.max.x)
+              let feedheight =  Math.abs(feedBB.min.y-feedBB.max.y)
+              g.feedBackground.scale.set(feedwidth+0.1,feedheight+0.1,1)
+              g.feed.position.x = -feedwidth/2
+  
+              g.feedBackground.position.y = -feedheight/2
+              g.feed.position.y = -feedheight/2
+              console.log("found my dependences")
+              g.postParent.visible = true
+              g.foundDependencies = true
 
-          g.feedBackground.position.y = -feedheight/2
-          g.feed.position.y = -feedheight/2
-          console.log("found my dependences")
-          g.postParent.visible = true
-          g.foundDependencies = true
+            },1000)
+            
+
+          }        
+          
         }
 
       }
@@ -429,7 +437,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
             >
               {item?.post?.author?.displayName + ":\n" + item.post.record.text}
             </Text>
-            <Text
+            {/* <Text
               key={`${uniqueKey}-text2`}
               name={"likes"}
               position={[0,0,0]} // TODO: might want to offset Z a bit
@@ -448,7 +456,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
               outlineColor={0x000000}
             >
               {likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
-            </Text>
+            </Text> */}
 
             <mesh
               key={`${uniqueKey}-mesh`}
