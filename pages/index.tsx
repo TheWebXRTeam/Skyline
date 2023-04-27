@@ -212,7 +212,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
     };
 
     g.goToWall = (d) => {
-      if (g.wallTarget) g.position.lerp(g.wallTarget, 0.2 * d);
+      if (g.wallTarget) g.position.lerp(g.wallTarget, 0.2);
     };
 
     g.seek = (d) => {
@@ -359,7 +359,29 @@ const Butterflies = ({
     const planes = ratk.children;
     if (planes.length === 0) return;
 
-    console.log("ratk planes: ", planes);
+    for (let i = 0; i < groups.length; i++) {
+			if (Math.random() * 1000 > 1) continue; 
+
+			const planeIndex = Math.floor(Math.random() * planes.length);
+
+			// ugly hack. sometimes the plane position is created, but matrixWorld is not updated yet. so skip
+			const zeroPos = new Vector3(0, 0, 0);
+			zeroPos.applyMatrix4(planes[planeIndex].matrixWorld);
+			if (zeroPos.x == 0 && zeroPos.y == 0 && zeroPos.z == 0) return; 
+          	{/* @ts-ignore */}
+			const planeHeight = planes[planeIndex].boundingRectangleHeight;
+			{/* @ts-ignore */}
+			const planeWidth = planes[planeIndex].boundingRectangleWidth;
+
+			const posX = Math.random() * planeWidth - planeWidth/2;
+			const posZ = Math.random() * planeHeight - planeHeight/2;
+
+			const pos = new Vector3(posX, 0, posZ);
+
+			pos.applyMatrix4(planes[planeIndex].matrixWorld);
+
+			groups[i].userData.targetPosition = new Vector3(pos.x, pos.y, pos.z);
+		}
   });
 
   // load a gltf file to be used as geometry
@@ -412,7 +434,7 @@ const Butterflies = ({
       const selectedObject = isLeftHand
         ? selectedObjectLeft.current
         : selectedObjectRight.current;
-        
+
       const grabbingHandPosition = grabbingHand.controller.position;
 
       // calculate the difference between the startGrabPosition and the object
@@ -427,7 +449,7 @@ const Butterflies = ({
         selectedObjectLeft.current.targetPosition =
           grabbingHandPosition.clone();
         // TODO: do we want this?
-        selectedObjectLeft.current.position.set(
+        selectedObjectLeft.current.position.copy(
           grabbingHandPosition
             .clone()
             .sub(isLeftHand ? leftOffset : rightOffset)
@@ -440,7 +462,7 @@ const Butterflies = ({
           grabbingHandPosition.clone();
 
         // TODO: do we want this?
-        selectedObjectRight.current.position.set(
+        selectedObjectRight.current.position.copy(
           grabbingHandPosition
             .clone()
             .sub(isLeftHand ? leftOffset : rightOffset)
