@@ -259,9 +259,6 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
 const Butterflies = ({ selectedObjectRight, selectedObjectLeft }) => {
   const [feedData, setFeedData] = useLocalStorage("feedData", null);
   const textures = useFeedDataTextures(feedData);
-
-  const { gl, scene, camera, xr } = useThree();
-
   const { session } = useXR();
 
   const leftController = useController("left");
@@ -313,7 +310,7 @@ const Butterflies = ({ selectedObjectRight, selectedObjectLeft }) => {
   });
 
   useEffect(() => {
-    if (session) {
+    if (!session) return;
       let lastLeftGroup = null;
       let lastRightGroup = null;
 
@@ -362,15 +359,7 @@ const Butterflies = ({ selectedObjectRight, selectedObjectLeft }) => {
 
         //
       });
-    }
   }, [session]);
-
-  const ratkObject = new RealityAccelerator(gl.xr);
-  scene.add(ratkObject.root);
-
-  useFrame((state, delta) => {
-    ratkObject.update();
-  });
 
   const butterflies = !feedData
     ? []
