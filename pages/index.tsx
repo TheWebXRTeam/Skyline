@@ -218,12 +218,14 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
           {/* @ts-ignore */}
           <Text
             key={`${uniqueKey}-text1`}
+            name={'feed'}
             position={[0.3, 0, 0]}
             fontSize={0.03}
             maxWidth={1}
             lineHeight={1}
             letterSpacing={0.02}
             anchorX={2.3}
+            visible={false}
             // @ts-ignore
             wrap={0.1}
             height={0.1}
@@ -234,12 +236,14 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
           </Text>
           <Text
             key={`${uniqueKey}-text2`}
+            name={'likes'}
             position={[2, 0, 0]}
             fontSize={0.03}
             maxWidth={0.5}
             lineHeight={1}
             letterSpacing={0.02}
             anchorX={2.3}
+            visible={false}
             // @ts-ignore
             wrap={0.1}
             height={0.1}
