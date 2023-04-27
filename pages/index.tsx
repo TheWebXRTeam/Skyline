@@ -380,7 +380,7 @@ const Butterflies = ({
 
 			pos.applyMatrix4(planes[planeIndex].matrixWorld);
 
-			groups[i].userData.targetPosition = new Vector3(pos.x, pos.y, pos.z);
+			groups[i].targetPosition = new Vector3(pos.x, pos.y, pos.z);
 		}
   });
 
