@@ -208,36 +208,36 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       if (Math.random() > 0.001) return; 
 	
       if (g.atWall) {
-	console.log("go back..");
-	g.atWall = false;
-	mixer.timeScale = 1; // resume animation
-	g.wallTarget = null;
-	g.targetPosition = new Vector3(random(-2, 2), random(-0.25,0.25), random(-2, 2));
-      } else {
+        console.log("go back..");
+        g.atWall = false;
+        mixer.timeScale = 1; // resume animation
+        g.wallTarget = null;
+        g.targetPosition = new Vector3(random(-2, 2), random(-0.25,0.25), random(-2, 2));
+            } else {
 
-	const ratk = scene.getObjectByName("ratk");
-	if (!ratk) return;
-	const planes = ratk.children as Object3D[];
-	if (planes.length < 1) return;
+        const ratk = scene.getObjectByName("ratk");
+        if (!ratk) return;
+        const planes = ratk.children as Object3D[];
+        if (planes.length < 1) return;
 
-	const planeIndex = Math.floor(Math.random() * planes.length);
+        const planeIndex = Math.floor(Math.random() * planes.length);
 
-	// ugly hack. sometimes the plane position is created, but matrixWorld is not updated yet. so skip
-	const zeroPos = new Vector3(0, 0, 0);
-	zeroPos.applyMatrix4(planes[planeIndex].matrixWorld);
-	if (zeroPos.x == 0 && zeroPos.y == 0 && zeroPos.z == 0) return;
+        // ugly hack. sometimes the plane position is created, but matrixWorld is not updated yet. so skip
+        const zeroPos = new Vector3(0, 0, 0);
+        zeroPos.applyMatrix4(planes[planeIndex].matrixWorld);
+        if (zeroPos.x == 0 && zeroPos.y == 0 && zeroPos.z == 0) return;
 
-	const planeHeight = (planes[planeIndex] as any).boundingRectangleHeight;
-	const planeWidth = (planes[planeIndex] as any).boundingRectangleWidth;
+        const planeHeight = (planes[planeIndex] as any).boundingRectangleHeight;
+        const planeWidth = (planes[planeIndex] as any).boundingRectangleWidth;
 
-	const posX = Math.random() * planeWidth - planeWidth / 2;
-	const posZ = Math.random() * planeHeight - planeHeight / 2;
+        const posX = Math.random() * planeWidth - planeWidth / 2;
+        const posZ = Math.random() * planeHeight - planeHeight / 2;
 
-	const pos = new Vector3(posX, 0, posZ);
+        const pos = new Vector3(posX, 0, posZ);
 
-	pos.applyMatrix4(planes[planeIndex].matrixWorld);
+        pos.applyMatrix4(planes[planeIndex].matrixWorld);
 
-	g.wallTarget = new Vector3(pos.x, pos.y, pos.z);
+        g.wallTarget = new Vector3(pos.x, pos.y, pos.z);
       }
     };
     g.checkEaten = (distanceToCamera)=>{
@@ -337,11 +337,17 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
 
     g.moveToPlane = (d) => {
       if (g.wallTarget) {
-	g.position.lerp(g.wallTarget, 0.02);
-	if (g.wallTarget.distanceTo(g.position) < 0.1) {
-	  g.atWall = true;
-	  mixer.timeScale = 0;
-	}
+
+        let dv = g.wallTarget.clone()
+        dv.sub(g.position)
+        dv.multiplyScalar(0.02)
+        dv.clampLength(0,0.005)
+        g.position.add(dv)
+        // g.position.lerp(g.wallTarget, 0.02);
+      if (g.wallTarget.distanceTo(g.position) < 0.1) {
+        g.atWall = true;
+        mixer.timeScale = 0;
+      }
       }
     };
 
