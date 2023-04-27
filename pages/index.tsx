@@ -22,7 +22,6 @@ const App = () => {
   const [sessionData, setSessionData] = useState(null);
 
   return (
-    <div>
       <ContainerBox
         ref={containerRef}
         style={{
@@ -40,7 +39,6 @@ const App = () => {
         <LoginForm />
         <XRScene sessionData={sessionData} setSessionData={setSessionData} feedData={feedData} />
       </ContainerBox>
-    </div>
   );
 };
 
@@ -402,12 +400,10 @@ const Butterflies = ({ feedData, selectedObjectRight, selectedObjectLeft }) => {
 };
 
 const XRScene = ({feedData, sessionData, setSessionData}) => {
-  console.log('XRScene render')
   const selectedObjectRight = useRef(null);
   const selectedObjectLeft = useRef(null);
 
   return (
-    <div style={{ position: "fixed", width: "100%", height: "100%" }}>
       <Canvas
         style={{
           position: "absolute",
@@ -440,7 +436,6 @@ const XRScene = ({feedData, sessionData, setSessionData}) => {
           )}
         </XR>
       </Canvas>
-    </div>
   );
 };
 

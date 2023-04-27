@@ -1,5 +1,5 @@
 import { BskyAgent } from "@atproto/api";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { XRButton } from "@react-three/xr";
 import { useLocalStorage } from "../lib/useLocalStorage";
 
@@ -14,9 +14,13 @@ import {
 
 function LoginForm() {
   const [username, setUsername] = useLocalStorage("userName", null);
-  const [password, setPassword] = useState("");
   const [sessionData, setSessionData] = useLocalStorage("sessionData", null);
   const [feedData, setFeedData] = useLocalStorage("feedData", null);
+  const [password, setPassword] = useState("");
+
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  const buttonRef = useRef();
 
   const agent = new BskyAgent({
     service: "https://bsky.social/",
@@ -99,9 +103,11 @@ function LoginForm() {
           </Paper>
         ) : (
           <>
+          {!loggedIn && (
             <XRButton
               /* The type of `XRSession` to create */
               mode={"AR"}
+              ref={buttonRef}
               style={{
                 // remove default button styles
                 background: "#228be6",
@@ -130,11 +136,15 @@ function LoginForm() {
                   "plane-detection",
                   "hit-test",
                 ],
+                children: (status) => {
+                  status !== "entered" ? <>Continue as {username}</> : <>Return to Browser</>
+                }
               }}
             >
               {/* Can accept regular DOM children and has an optional callback with the XR button status (unsupported, exited, entered) */}
-              Continue as {username}
+              
             </XRButton>
+          )}
             {/* add logout button */}
             <Button
               fullWidth
