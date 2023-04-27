@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { Mesh } from "three";
 import dynamic from "next/dynamic";
 const LoginForm = dynamic(() => import("../components/Login"), { ssr: false });
+let defaultTexture = "https://cdn.bsky.social/imgproxy/9Th8ZuZuEvfOEohn22gMWnj7f7Cj31bonAtJSTUMH0s/rs:fill:1000:1000:1:0/plain/bafkreiftyjy6k3t2yi5hh7gwin4p4hkuhp3kqxbzbbzr4gjsgotvcyk73e@jpeg";
 
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 // import skeletonutils
@@ -29,7 +30,7 @@ const loadTexture = async (url) => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ url: url }),
+      body: JSON.stringify({ url: url ?? defaultTexture }),
     });
     const jsonResponse = await response.json();
     const base64Image = jsonResponse.base64Image;
@@ -243,23 +244,23 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
 
         return (
           <group
-            key={uniqueKey}
             ref={groupRef}
+            key={uniqueKey}
             name={i + "-group"}
             position={[random(-2, 2), random(0.1, 1), random(-2, 2)]}
           >
             {/* add cube to the scene */}
-            <>
-              <primitive
-                key={`${uniqueKey}-primitive`}
-                scale={[0.08, 0.08, 0.08]}
-                position={[0, 0, 0]}
-                object={butterfly}
-              />
-              {!base64Texture ? null : (
+            <primitive
+              key={`${uniqueKey}-primitive`}
+              scale={[0.08, 0.08, 0.08]}
+              position={[0, 0, 0]}
+              object={butterfly}
+            />
+            {!base64Texture ? null : (
+              <>
+                {/* @ts-ignore */}
                 <Text
                   key={`${uniqueKey}-text1`}
-                  name={"feed"}
                   position={[0.3, 0, 0]}
                   fontSize={0.03}
                   maxWidth={1}
@@ -268,7 +269,6 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
                   anchorX={2.3}
                   // @ts-ignore
                   wrap={0.1}
-                  visible={false}
                   height={0.1}
                   color={0x000000}
                   textAlign={"left"}
@@ -277,36 +277,34 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
                     ": " +
                     item.post.record.text}
                 </Text>
-              )}
-              <Text
-                key={`${uniqueKey}-text2`}
-                position={[2, 0, 0]}
-                fontSize={0.03}
-                maxWidth={0.5}
-                lineHeight={1}
-                letterSpacing={0.02}
-                anchorX={2.3}
-                // @ts-ignore
-                wrap={0.1}
-                visible={false}
-                height={0.1}
-                color={0x000000}
-                textAlign={"center"}
-              >
-                {likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
-              </Text>
-              <mesh
-                geometry={pfpGeometry}
-                scale={[0.07, 0.07, 0.07]}
-                position={[0, 0, 0.04]}
-                ref={pfpRef}
-              >
-                <meshBasicMaterial
-                  side={THREE.DoubleSide}
-                  map={base64Texture}
-                />
-              </mesh>
-            </>
+                <Text
+                  key={`${uniqueKey}-text2`}
+                  position={[2, 0, 0]}
+                  fontSize={0.03}
+                  maxWidth={0.5}
+                  lineHeight={1}
+                  letterSpacing={0.02}
+                  anchorX={2.3}
+                  // @ts-ignore
+                  wrap={0.1}
+                  height={0.1}
+                  color={0x000000}
+                  textAlign={"center"}
+                >
+                  {likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
+                </Text>
+                <mesh
+                  geometry={pfpGeometry}
+                  scale={[0.07, 0.07, 0.07]}
+                  position={[0, 0, 0.04]}
+                >
+                  <meshStandardMaterial
+                    side={THREE.DoubleSide}
+                    map={base64Texture}
+                  />
+                </mesh>
+              </>
+            )}
           </group>
         );
       });
