@@ -331,6 +331,13 @@ const Butterflies = ({
       let bf = groups[i];
       bf.run(delta);
     }
+		const ratk = scene.getObjectByName("ratk");
+		if (!ratk) return;
+
+    const planes = ratk.children
+		if (planes.length === 0) return;
+
+    console.log('ratk planes: ', planes)
   });
 
   // load a gltf file to be used as geometry
