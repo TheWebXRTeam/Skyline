@@ -89,7 +89,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
 
   //useframe to update the animation mixer (from @react-three/fiber)
   useFrame((state, delta) => {
-    if (groupRef.current) groupRef.current.run(delta);
+    //if (groupRef.current) groupRef.current.run(delta);
     mixer.update(delta);
 
   });
@@ -444,17 +444,19 @@ const Butterflies = ({
   console.log("Butterflies render");
   const { session } = useXR();
   const { scene, camera } = useThree();
+  const groupsRef = useRef([]);
 
   const leftController = useController("left");
   const rightController = useController("right");
 
-  const groups = [];
+  //const groups = [];
+  const groups = groupsRef.current;
 
   useFrame((state, delta) => {
     //GLOBAL tick update
     for (let i = 0; i < groups.length; i++) {
       let bf = groups[i];
-      //bf.run(delta);
+      bf.run(delta);
     }
   });
 
