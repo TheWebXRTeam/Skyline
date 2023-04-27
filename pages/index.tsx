@@ -260,9 +260,9 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
           <Text
             key={`${uniqueKey}-text1`}
             name={"feed"}
-            position={[0.3, 0, 0]}
+            position={[-0.15, -0.2, 0]}
             fontSize={0.03}
-            maxWidth={1}
+            maxWidth={0.4}
             lineHeight={1}
             letterSpacing={0.02}
             anchorX={0}
@@ -273,14 +273,14 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
             color={0x000000}
             textAlign={"center"}
           >
-            {item?.post?.author?.displayName + ": " + item.post.record.text}
+            {item?.post?.author?.displayName + ":\n" + item.post.record.text}
           </Text>
           <Text
             key={`${uniqueKey}-text2`}
             name={"likes"}
-            position={[2, 0, 0]}
+            position={[-0.15, -0.2, 0]}
             fontSize={0.03}
-            maxWidth={0.5}
+            maxWidth={0.4}
             lineHeight={1}
             letterSpacing={0.02}
             anchorX={0}
