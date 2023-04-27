@@ -221,8 +221,6 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
             position={[random(-2, 2), random(0.1, 1), random(-2, 2)]}
           >
             {/* add cube to the scene */}
-            {selectedObjectLeft.current?.name === i + "-group" ||
-              (selectedObjectRight.current?.name === i + "-group" && (
                 <>
                   <primitive
                     key={`${uniqueKey}-primitive`}
@@ -277,7 +275,6 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
                     />
                   </mesh>
                 </>
-              ))}
           </group>
         );
       });
