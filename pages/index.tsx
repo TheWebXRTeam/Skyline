@@ -9,6 +9,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { clone } from "three/examples/jsm/utils/SkeletonUtils";
 import { useFeedDataTextures } from "../lib/useFeedDataTextures";
 import { useLocalStorage } from "../lib/useLocalStorage";
+import { RatkScene } from "../components/RatkScene";
 
 const TWO_PI = 6.28318530718;
 
@@ -423,7 +424,7 @@ const XRScene = ({feedData, sessionData, setSessionData}) => {
           }}
         >
           <Hands />
-          {/* <RatkScene /> */}
+          <RatkScene />
           <Controllers />
           <directionalLight position={[1, 1, 1]} color={0xffffff} />
           {sessionData && (
