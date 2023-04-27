@@ -416,14 +416,16 @@ const Butterflies = ({
 		if (selectedObjectLeft.current) {
 			console.log("left is butterfly", selectedObjectLeft.current)
 			// if so, set the target position to the grabbing hand position
-			selectedObjectLeft.current.userData.targetPosition = grabbingHandPosition.clone();
+
+			selectedObjectLeft.current.position.copy(grabbingHandPosition.clone().sub(offset));
+
 		}
 		/// check if selectedObjectRight is a butterfly
 		if (selectedObjectRight.current) {
 			console.log("right is butterfly", selectedObjectRight.current)
 
 			// if so, set the target position to the grabbing hand position
-			selectedObjectRight.current.userData.targetPosition = grabbingHandPosition.clone();
+			selectedObjectRight.current.position.copy(grabbingHandPosition.clone().sub(offset));
 		}
 
 
