@@ -339,6 +339,32 @@ const Butterflies = ({
     const planes = ratk.children
 		if (planes.length === 0) return;
 
+
+		for (let i = 0; i < groups.length; i++) {
+			if (Math.random() * 1000 > 1) continue; 
+
+			const planeIndex = Math.floor(Math.random() * planes.length);
+
+			// ugly hack. sometimes the plane position is created, but matrixWorld is not updated yet. so skip
+			const zeroPos = new Vector3(0, 0, 0);
+			zeroPos.applyMatrix4(planes[planeIndex].matrixWorld);
+			if (zeroPos.x == 0 && zeroPos.y == 0 && zeroPos.z == 0) return; 
+          	{/* @ts-ignore */}
+			const planeHeight = planes[planeIndex].boundingRectangleHeight;
+			{/* @ts-ignore */}
+			const planeWidth = planes[planeIndex].boundingRectangleWidth;
+
+			const posX = Math.random() * planeWidth - planeWidth/2;
+			const posZ = Math.random() * planeHeight - planeHeight/2;
+
+			const pos = new Vector3(posX, 0, posZ);
+
+			pos.applyMatrix4(planes[planeIndex].matrixWorld);
+
+			groups[i].userData.targetPosition = new Vector3(pos.x, pos.y, pos.z);
+		}
+
+
     console.log('ratk planes: ', planes)
   });
 
