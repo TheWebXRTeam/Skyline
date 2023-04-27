@@ -65,27 +65,22 @@ const App = () => {
 };
 
 const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
-  const butterfly = clone(gltf.scene);
-  const mixer = new AnimationMixer(butterfly)
-
-  const [setup, setSetup] = useState({
-    butterfly,
-    mixer,
-  });
   console.log("Butterfly render");
   const { scene } = useThree();
   const uniqueKey = `${item.post.author.displayName}-${i}`;
   const random = (min, max) => Math.random() * (max - min) + min;
 
+  const butterfly = clone(gltf.scene);
 
   // Clone animations and setup the mixer
-  mixers.push(setup.mixer);
+  const mixer = new AnimationMixer(butterfly);
+  mixers.push(mixer);
 
   if (gltf.animations && gltf.animations.length > 0) {
     gltf.animations.forEach((animation) => {
-      setup.mixer.clipAction(animation).play();
+      mixer.clipAction(animation).play();
       // add an offset to the animation
-      setup.mixer.clipAction(animation).time = MathUtils.randFloat(
+      mixer.clipAction(animation).time = MathUtils.randFloat(
         0,
         animation.duration
       );
@@ -94,17 +89,14 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
 
   //useframe to update the animation mixer (from @react-three/fiber)
   useFrame((state, delta) => {
-/*
-    if (groupRef.current) {
-      groupRef.current.run(delta);
-    }
-*/
-    setup.mixer.update(delta * 3);
+    // if (groupRef.current) groupRef.current.run(delta);
+    mixer.update(delta);
+
   });
 
   const profilepic = pfp.scene.clone();
 
-  setup.butterfly.animations = gltf.animations;
+  butterfly.animations = gltf.animations;
 
   useEffect(() => {
     if (!groupRef.current) return;
@@ -119,20 +111,23 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
     // console.log("ggggggg", g);
     groups.push(g);
     // randomize the color of the butterfly
-    g.init = () => {
+    g.init = () => {      
       g.cv = new Vector3();
       g.cam = camera;
       g.IDLE = 0;
       g.DEAD = 1;
-      g.HELD = 3;
       g.RESPAWNING = 2;
-
+      g.HELD = 3;
       g.STATE = g.DEAD
       g.initializePosition()
       g.period = new Vector3(random(0, 1), random(0, 1), random(0, 1));
       g.wanderRadius = 0.1;
       g.phase = random(0, TWO_PI);
       g.theta = 0;
+      
+      g.postParent = g.getObjectByName("postparent")
+      g.postParent.visible = true
+      
     };
 
     g.multichord = (p, chords, offset, r) => {
@@ -146,7 +141,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
     };
     g.hover = (d) => {
 
-      g.theta += d * 0.5;
+      g.theta += d *  0.5;
 
       let x = g.multichord(g.theta * g.period.x, 4, g.phase, g.wanderRadius);
       let y = g.multichord(g.theta * g.period.y, 4, g.phase, g.wanderRadius);
@@ -155,7 +150,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       x += g.initialPosition.x;
       y += g.initialPosition.y;
       z += g.initialPosition.z;
-
+      
       g.position.lerp(new Vector3(x, y, z), 0.1);
     };
 
@@ -165,9 +160,9 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       if (g.atWall) {
 	console.log("go back..");
 	g.atWall = false;
-	setup.mixer.timeScale = 1; // resume animation
+	mixer.timeScale = 1; // resume animation
 	g.wallTarget = null;
-	g.targetPosition = new Vector3(random(-2, 2), random(0.1, 1), random(-2, 2));
+	g.targetPosition = new Vector3(random(-2, 2), random(-0.25,0.25), random(-2, 2));
       } else {
 
 	const ratk = scene.getObjectByName("ratk");
@@ -230,18 +225,19 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
         g.cv.add(headavoid);
       } 
     }; 
-    g.initializePosition = ()=>{
-      
-      g.position.set(random(-2, 2), random(0.1, 1), random(-2, 2));
+    g.initializePosition = ()=>{      
+      g.position.set(random(-2, 2), random(-0.25,0.25), random(-2, 2));
       g.scale.set(0,0,0)
       g.initialPosition = g.position.clone();
-      g.fade = 0   
+      g.fade = 0  
+      // g.postParent.scale.set(0,0,0) 
+      // g.postParent.visible = false
     }
 
     g.disappear=()=>{
       g.scale.set(0,0,0)
       g.fadeIn = false
-      g.position.set(g.position.x,1000,g.position.z)
+      g.position.set(g.position.x,10,g.position.z)
     }
     g.runFade = ()=>{
         g.fade += 0.01
@@ -254,7 +250,20 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
         g.scale.set(s,s,s) 
       
     }
+    g.updatePost = ()=>{
+      let s = g.postParent.scale.x
+      if(g.STATE == g.HELD || true){
+        s+=0.01
+        s = Math.min(s,1)
+      }else{     
+        s-=0.01
+        s = Math.max(s,0)   
+      }
+      s = MathUtils.smootherstep(s,0,1)
+      g.postParent.scale.set(s,s,s)
+    }
     g.run = (d) => {
+      g.updatePost()
       if (g.STATE == g.IDLE) {
 	g.triggerMoveToPlane();
   	if (g.wallTarget) {
@@ -265,7 +274,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       } else if (g.STATE == g.HELD) {
         g.seek(d);
       } else if(g.STATE == g.DEAD){
-        if(Math.random() < 0.01){
+        if(Math.random() < 0.001){
           console.log("respawning")
           g.STATE = g.RESPAWNING
           g.initializePosition()
@@ -285,7 +294,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
 	g.position.lerp(g.wallTarget, 0.02);
 	if (g.wallTarget.distanceTo(g.position) < 0.1) {
 	  g.atWall = true;
-	  setup.mixer.timeScale = 0;
+	  mixer.timeScale = 0;
 	}
       }
     };
@@ -294,18 +303,18 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       g.position?.lerp(g.targetPosition, 0.1);
     };
 
-    g.grab = () => {
-      if (g.STATE == g.IDLE) g.STATE = g.HELD;
-    };
-
     g.release = () => {
-      if (g.STATE == g.HELD) g.STATE = g.IDLE;
+      if (g.STATE == g.HELD) {
+        //TODO actually evaluate what state to transition to? Make sure we can't hurt state machine
+        g.STATE = g.IDLE;
+      }
     };
     g.setTarget = (t, openness) => {
+      if(g.STATE == g.IDLE)g.STATE = g.HELD
+      //track grabbedness here
       g.targetPosition = t;
       //TODO - care about handedness, add an offset to target based on where we should go (or else hands have an offset null and we target that offset null? many ways to skin)
     };
-    
     g.init();
   }, [textures]);
 
@@ -316,7 +325,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
   });
 
   // randomize the color of the butterfly
-  setup.butterfly.traverse((child) => {
+  butterfly.traverse((child) => {
     if (child instanceof Mesh) {
       child.material.color.setHex(Math.random() * 0xffffff);
     }
@@ -346,52 +355,69 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
         key={`${uniqueKey}-primitive`}
         scale={[0.08, 0.08, 0.08]}
         position={[0, 0, 0]}
-        object={setup.butterfly}
+        object={butterfly}
       />
       {!base64Texture ? null : (
         <>
           {/* @ts-ignore */}
-          <Text
-            key={`${uniqueKey}-text1`}
-            name={"feed"}
-            position={[-0.15, -0.2, 0]} // TODO: might want to offset Z a bit
-            fontSize={0.03}
-            maxWidth={0.4}
-            lineHeight={1}
-            letterSpacing={0.02}
-            anchorX={0}
-            visible={false}
-            // @ts-ignore
-            wrap={0.1}
-            height={0.1}
-            color={0x000000}
-            textAlign={"center"}
-            outlineWidth={0.001}
-            outlineColor={0xffffff}
-          >
-            {item?.post?.author?.displayName + ":\n" + item.post.record.text}
-          </Text>
-          <Text
-            key={`${uniqueKey}-text2`}
-            name={"likes"}
-            position={[-0.15, -0.2, 0]} // TODO: might want to offset Z a bit
-            fontSize={0.03}
-            maxWidth={0.4}
-            lineHeight={1}
-            letterSpacing={0.02}
-            depthOffset={-1}
-            anchorX={0}
-            visible={false}
-            // @ts-ignore
-            wrap={0.1}
-            height={0.1}
-            color={0x000000}
-            textAlign={"center"}
-            outlineWidth={0.001}
-            outlineColor={0xffffff}
-          >
-            {likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
-          </Text>
+					<mesh
+						key={`${uniqueKey}-mesh`}
+						geometry={pfpGeometry}
+						position={[0, -0.4, -0.03]} // TODO: might want to offset Z a bit
+						name={"postparent"}
+						visible={false}
+						ref={pfpRef}
+					>
+						<meshBasicMaterial
+							key={`${uniqueKey}-material`}
+							color={0x000000}
+							transparent={true}
+						/>
+						<planeBufferGeometry
+							key={`${uniqueKey}-geometry`}
+							attach="geometry"
+							args={[0.8, 0.5]}
+						/>
+						<Text
+							key={`${uniqueKey}-text1`}
+							name={"feed"}
+							position={[-0.15, 0, .15]} // TODO: might want to offset Z a bit
+							fontSize={0.03}
+							maxWidth={0.4}
+							lineHeight={1.3}
+							letterSpacing={0.02}
+							anchorX={0}
+							// @ts-ignore
+							wrap={0.1}
+							height={0.1}
+							color={0xffffff}
+							textAlign={"center"}
+							outlineWidth={0.001}
+							outlineColor={0x000000}
+						>
+							{item?.post?.author?.displayName + ":\n" + item.post.record.text}
+						</Text>
+						<Text
+							key={`${uniqueKey}-text2`}
+							name={"likes"}
+							position={[1.5, 0, .15]} // TODO: might want to offset Z a bit
+							fontSize={0.03}
+							maxWidth={0.4}
+							lineHeight={1.3}
+							letterSpacing={0.02}
+							depthOffset={-1}
+							anchorX={0}
+							// @ts-ignore
+							wrap={0.1}
+							height={0.1}
+							color={0xffffff}
+							textAlign={"center"}
+							outlineWidth={0.001}
+							outlineColor={0x000000}
+						>
+							{likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
+						</Text>
+					</mesh>
           <mesh
             geometry={pfpGeometry}
             scale={[0.07, 0.07, 0.07]}
@@ -454,43 +480,18 @@ const Butterflies = ({
 
   let leftOffset = null;
   let rightOffset = null;
-  let initDistance = null
 
   useFrame((state, delta) => {
     if (!leftController) return;
     if (!rightController) return;
 
-
-    const maxDistance = .8;
-
-    if (!selectedObjectLeft.current || !selectedObjectRight.current) {
-      initDistance = null;
-    }
-
     // Grabbing
     if (selectedObjectLeft.current && selectedObjectRight.current) {
       // Grabbing the same object
-      
       if (selectedObjectLeft.current === selectedObjectRight.current) {
-        if(initDistance === null) {
-          initDistance = leftController.controller.position.distanceTo(rightController.controller.position)
-          selectedObjectLeft.current.grab();
-        }
-
-        const centerPoint = new Vector3();
-        centerPoint.addVectors(
-          leftController.controller.position,
-          rightController.controller.position
-        );
-        centerPoint.multiplyScalar(0.5);
-
-        const currentDistance = leftController.controller.position.distanceTo(rightController.controller.position)
-
-        // remap the current distance from initDistance to maxDistance to 0 to 1
-        const remappedDistance = (currentDistance - initDistance) / (maxDistance - initDistance)
-
-        selectedObjectLeft.current.setTarget(centerPoint, remappedDistance)
-      
+        selectedObjectLeft.current.grab();
+      } else {
+        // Grabbing different objects
       }
     }
     // one hand is grabbing
@@ -512,12 +513,8 @@ const Butterflies = ({
 
       // calculate the difference between the startGrabPosition and the object
       if (isLeftHand && !leftOffset) {
-        const audio = new Audio("/hum.wav");
-        audio.play();
         leftOffset = grabbingHandPosition.clone().sub(selectedObject.position);
       } else if (!isLeftHand && !rightOffset) {
-        const audio = new Audio("/hum.wav");
-        audio.play();
         rightOffset = grabbingHandPosition.clone().sub(selectedObject.position);
       }
 
@@ -569,18 +566,18 @@ const Butterflies = ({
         console.log("nearest group", nearestGroup);
         selectedObjectLeft.current = nearestGroup;
         lastLeftGroup = nearestGroup;
-        nearestGroup.children.forEach((child, i) => {
-          if (child.name?.includes("feed")) child.visible = true;
-        });
+        // nearestGroup.children.forEach((child, i) => {
+        //   if (child.name?.includes("feed")) child.visible = true;
+        // });
       } else if (inputSource.handedness === "right") {
         const nearestGroup = getGroup(rightController.controller.position);
         if (!nearestGroup) return;
         console.log("nearest group", nearestGroup);
         selectedObjectRight.current = nearestGroup;
         lastRightGroup = nearestGroup;
-        nearestGroup.children.forEach((child, i) => {
-          if (child.name?.includes("feed")) child.visible = true;
-        });
+        // nearestGroup.children.forEach((child, i) => {
+        //   if (child.name?.includes("feed")) child.visible = true;
+        // });
       }
 
       //
