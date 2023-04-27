@@ -65,22 +65,27 @@ const App = () => {
 };
 
 const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
+  const butterfly = clone(gltf.scene);
+  const mixer = new AnimationMixer(butterfly)
+
+  const [setup, setSetup] = useState({
+    butterfly,
+    mixer,
+  });
   console.log("Butterfly render");
   const { scene } = useThree();
   const uniqueKey = `${item.post.author.displayName}-${i}`;
   const random = (min, max) => Math.random() * (max - min) + min;
 
-  const butterfly = clone(gltf.scene);
 
   // Clone animations and setup the mixer
-  const mixer = new AnimationMixer(butterfly);
-  mixers.push(mixer);
+  mixers.push(setup.mixer);
 
   if (gltf.animations && gltf.animations.length > 0) {
     gltf.animations.forEach((animation) => {
-      mixer.clipAction(animation).play();
+      setup.mixer.clipAction(animation).play();
       // add an offset to the animation
-      mixer.clipAction(animation).time = MathUtils.randFloat(
+      setup.mixer.clipAction(animation).time = MathUtils.randFloat(
         0,
         animation.duration
       );
@@ -89,12 +94,12 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
 
   //useframe to update the animation mixer (from @react-three/fiber)
   useFrame((state, delta) => {
-    mixer.update(delta);
+    setup.mixer.update(delta * 3);
   });
 
   const profilepic = pfp.scene.clone();
 
-  butterfly.animations = gltf.animations;
+  setup.butterfly.animations = gltf.animations;
 
   useEffect(() => {
     if (!groupRef.current) return;
@@ -239,7 +244,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
   });
 
   // randomize the color of the butterfly
-  butterfly.traverse((child) => {
+  setup.butterfly.traverse((child) => {
     if (child instanceof Mesh) {
       child.material.color.setHex(Math.random() * 0xffffff);
     }
@@ -269,7 +274,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
         key={`${uniqueKey}-primitive`}
         scale={[0.08, 0.08, 0.08]}
         position={[0, 0, 0]}
-        object={butterfly}
+        object={setup.butterfly}
       />
       {!base64Texture ? null : (
         <>
@@ -406,18 +411,43 @@ const Butterflies = ({
 
   let leftOffset = null;
   let rightOffset = null;
+  let initDistance = null
 
   useFrame((state, delta) => {
     if (!leftController) return;
     if (!rightController) return;
 
+
+    const maxDistance = .8;
+
+    if (!selectedObjectLeft.current || !selectedObjectRight.current) {
+      initDistance = null;
+    }
+
     // Grabbing
     if (selectedObjectLeft.current && selectedObjectRight.current) {
       // Grabbing the same object
+      
       if (selectedObjectLeft.current === selectedObjectRight.current) {
-        selectedObjectLeft.current.grab();
-      } else {
-        // Grabbing different objects
+        if(initDistance === null) {
+          initDistance = leftController.controller.position.distanceTo(rightController.controller.position)
+          selectedObjectLeft.current.grab();
+        }
+
+        const centerPoint = new Vector3();
+        centerPoint.addVectors(
+          leftController.controller.position,
+          rightController.controller.position
+        );
+        centerPoint.multiplyScalar(0.5);
+
+        const currentDistance = leftController.controller.position.distanceTo(rightController.controller.position)
+
+        // remap the current distance from initDistance to maxDistance to 0 to 1
+        const remappedDistance = (currentDistance - initDistance) / (maxDistance - initDistance)
+
+        selectedObjectLeft.current.setTarget(centerPoint, remappedDistance)
+      
       }
     }
     // one hand is grabbing
@@ -439,8 +469,12 @@ const Butterflies = ({
 
       // calculate the difference between the startGrabPosition and the object
       if (isLeftHand && !leftOffset) {
+        const audio = new Audio("/hum.wav");
+        audio.play();
         leftOffset = grabbingHandPosition.clone().sub(selectedObject.position);
       } else if (!isLeftHand && !rightOffset) {
+        const audio = new Audio("/hum.wav");
+        audio.play();
         rightOffset = grabbingHandPosition.clone().sub(selectedObject.position);
       }
 
