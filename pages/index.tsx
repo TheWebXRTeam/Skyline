@@ -470,9 +470,7 @@ const XRScene = ({ feedData, sessionData, setSessionData }) => {
           setSessionData(true);
         }}
       >
-        <Hands />
         <RatkScene />
-        <Controllers />
         <directionalLight position={[1, 1, 1]} color={0xffffff} />
         {sessionData && textures && (
           <Butterflies
