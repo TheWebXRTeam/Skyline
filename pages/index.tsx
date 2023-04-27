@@ -3,7 +3,7 @@ import { Text } from "@react-three/drei";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Controllers, Hands, XR, useController, useXR } from "@react-three/xr";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import {
   AnimationMixer,
   Color,
@@ -89,7 +89,9 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
 
   //useframe to update the animation mixer (from @react-three/fiber)
   useFrame((state, delta) => {
+    // if (groupRef.current) groupRef.current.run(delta);
     mixer.update(delta);
+
   });
 
   const profilepic = pfp.scene.clone();
@@ -152,33 +154,41 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       g.position.lerp(new Vector3(x, y, z), 0.1);
     };
 
-    g.checkWalls = () => {
-      const ratk = scene.getObjectByName("ratk");
-      if (!ratk) return;
-      const planes = ratk.children as Object3D[];
-      if (planes.length < 1) return;
+    g.triggerMoveToPlane = () => {
+      if (Math.random() > 0.001) return; 
+	
+      if (g.atWall) {
+	console.log("go back..");
+	g.atWall = false;
+	mixer.timeScale = 1; // resume animation
+	g.wallTarget = null;
+	g.targetPosition = new Vector3(random(-2, 2), random(-0.25,0.25), random(-2, 2));
+      } else {
 
-      const planeIndex = Math.floor(Math.random() * planes.length);
+	const ratk = scene.getObjectByName("ratk");
+	if (!ratk) return;
+	const planes = ratk.children as Object3D[];
+	if (planes.length < 1) return;
 
-      // ugly hack. sometimes the plane position is created, but matrixWorld is not updated yet. so skip
-      const zeroPos = new Vector3(0, 0, 0);
-      zeroPos.applyMatrix4(planes[planeIndex].matrixWorld);
-      if (zeroPos.x == 0 && zeroPos.y == 0 && zeroPos.z == 0) return;
+	const planeIndex = Math.floor(Math.random() * planes.length);
 
-      // TODO: Forcing these so any so we can build but need to figure out why they are not there
-      const planeHeight = (planes[planeIndex] as any).boundingRectangleHeight;
-      const planeWidth = (planes[planeIndex] as any).boundingRectangleWidth;
+	// ugly hack. sometimes the plane position is created, but matrixWorld is not updated yet. so skip
+	const zeroPos = new Vector3(0, 0, 0);
+	zeroPos.applyMatrix4(planes[planeIndex].matrixWorld);
+	if (zeroPos.x == 0 && zeroPos.y == 0 && zeroPos.z == 0) return;
 
-      console.log("planeHeight", planeHeight);
+	const planeHeight = (planes[planeIndex] as any).boundingRectangleHeight;
+	const planeWidth = (planes[planeIndex] as any).boundingRectangleWidth;
 
-      const posX = Math.random() * planeWidth - planeWidth / 2;
-      const posZ = Math.random() * planeHeight - planeHeight / 2;
+	const posX = Math.random() * planeWidth - planeWidth / 2;
+	const posZ = Math.random() * planeHeight - planeHeight / 2;
 
-      const pos = new Vector3(posX, 0, posZ);
+	const pos = new Vector3(posX, 0, posZ);
 
-      pos.applyMatrix4(planes[planeIndex].matrixWorld);
+	pos.applyMatrix4(planes[planeIndex].matrixWorld);
 
-      g.wallTarget = new Vector3(pos.x, pos.y, pos.z);
+	g.wallTarget = new Vector3(pos.x, pos.y, pos.z);
+      }
     };
     g.checkEaten = (distanceToCamera)=>{
       if (distanceToCamera < 0.15) {
@@ -255,7 +265,12 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
     g.run = (d) => {
       g.updatePost()
       if (g.STATE == g.IDLE) {
-        g.hover(d);
+	g.triggerMoveToPlane();
+  	if (g.wallTarget) {
+	  g.moveToPlane();
+	} else {
+	  g.hover(d);
+	}
       } else if (g.STATE == g.HELD) {
         g.seek(d);
       } else if(g.STATE == g.DEAD){
@@ -274,8 +289,14 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       g.cv.multiplyScalar(0.9);
     };
 
-    g.goToWall = (d) => {
-      if (g.wallTarget) g.position.lerp(g.wallTarget, 0.2);
+    g.moveToPlane = (d) => {
+      if (g.wallTarget) {
+	g.position.lerp(g.wallTarget, 0.02);
+	if (g.wallTarget.distanceTo(g.position) < 0.1) {
+	  g.atWall = true;
+	  mixer.timeScale = 0;
+	}
+      }
     };
 
     g.seek = (d) => {
@@ -435,35 +456,6 @@ const Butterflies = ({
       let bf = groups[i];
       bf.run(delta);
     }
-    const ratk = scene.getObjectByName("ratk");
-    if (!ratk) return;
-
-    const planes = ratk.children;
-    if (planes.length === 0) return;
-
-    for (let i = 0; i < groups.length; i++) {
-			if (Math.random() * 1000 > 1) continue; 
-
-			const planeIndex = Math.floor(Math.random() * planes.length);
-
-			// ugly hack. sometimes the plane position is created, but matrixWorld is not updated yet. so skip
-			const zeroPos = new Vector3(0, 0, 0);
-			zeroPos.applyMatrix4(planes[planeIndex].matrixWorld);
-			if (zeroPos.x == 0 && zeroPos.y == 0 && zeroPos.z == 0) return; 
-          	{/* @ts-ignore */}
-			const planeHeight = planes[planeIndex].boundingRectangleHeight;
-			{/* @ts-ignore */}
-			const planeWidth = planes[planeIndex].boundingRectangleWidth;
-
-			const posX = Math.random() * planeWidth - planeWidth/2;
-			const posZ = Math.random() * planeHeight - planeHeight/2;
-
-			const pos = new Vector3(posX, 0, posZ);
-
-			pos.applyMatrix4(planes[planeIndex].matrixWorld);
-
-			groups[i].targetPosition = new Vector3(pos.x, pos.y, pos.z);
-		}
   });
 
   // load a gltf file to be used as geometry
