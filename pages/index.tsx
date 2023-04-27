@@ -382,7 +382,8 @@ const Butterflies = ({
     return closestGroup;
   }
 
-  let offset = null;
+  let leftOffset = null;
+  let rightOffset = null;
 
   useFrame((state, delta) => {
     if (!leftController) return;
@@ -402,53 +403,65 @@ const Butterflies = ({
       (!selectedObjectLeft.current && selectedObjectRight.current) ||
       (selectedObjectLeft.current && !selectedObjectRight.current)
     ) {
+      const isLeftHand =
+        selectedObjectLeft.current && !selectedObjectRight.current;
+
       console.log("one hand grabbing");
       // one hand is grabbing
-      const grabbingHand = selectedObjectLeft.current
-        ? leftController
-        : rightController;
-      console.log("grabbingHand", grabbingHand);
-      const selectedObject =
-        selectedObjectLeft.current || selectedObjectRight.current;
-      console.log("selectedObject", selectedObject);
+      const grabbingHand = isLeftHand ? leftController : rightController;
+      const selectedObject = isLeftHand
+        ? selectedObjectLeft.current
+        : selectedObjectRight.current;
+        
       const grabbingHandPosition = grabbingHand.controller.position;
-      console.log("grabbingHandPosition", grabbingHandPosition);
+
       // calculate the difference between the startGrabPosition and the object
-      if (!offset)
-        offset = grabbingHandPosition.clone().sub(selectedObject.position);
+      if (isLeftHand && !leftOffset) {
+        leftOffset = grabbingHandPosition.clone().sub(selectedObject.position);
+      } else if (!isLeftHand && !rightOffset) {
+        rightOffset = grabbingHandPosition.clone().sub(selectedObject.position);
+      }
+
       // check if selectedObjectLeft is a butterfly
-      if (selectedObjectLeft.current) {
-        console.log("left is butterfly", selectedObjectLeft.current);
-        // if so, set the target position to the grabbing hand position
-        selectedObjectLeft.current.userData.targetPosition =
+      if (isLeftHand) {
+        selectedObjectLeft.current.targetPosition =
           grabbingHandPosition.clone();
+        // TODO: do we want this?
+        selectedObjectLeft.current.position.set(
+          grabbingHandPosition
+            .clone()
+            .sub(isLeftHand ? leftOffset : rightOffset)
+        );
       }
       /// check if selectedObjectRight is a butterfly
-      if (selectedObjectRight.current) {
-        console.log("right is butterfly", selectedObjectRight.current);
-
-        selectedObject.position.copy(grabbingHandPosition.clone().sub(offset));
-
-        // check for distance to camera for eating
-        const distanceToCamera = grabbingHandPosition.distanceTo(
-          camera.position
-        );
-
-        if (distanceToCamera < 0.15) {
-          console.log("eating");
-          // play a sound
-          const audio = new Audio("/eat.mp3");
-          audio.play();
-          // set selectedObject to null
-          selectedObjectLeft.current = null;
-          selectedObjectRight.current = null;
-        }
-      } else if (!selectedObjectLeft.current && !selectedObjectRight.current) {
-        offset = null;
+      else {
         // if so, set the target position to the grabbing hand position
-        selectedObjectRight.current.userData.targetPosition =
+        selectedObjectRight.current.targetPosition =
           grabbingHandPosition.clone();
+
+        // TODO: do we want this?
+        selectedObjectRight.current.position.set(
+          grabbingHandPosition
+            .clone()
+            .sub(isLeftHand ? leftOffset : rightOffset)
+        );
       }
+
+      // check for distance to camera for eating
+      const distanceToCamera = grabbingHandPosition.distanceTo(camera.position);
+
+      if (distanceToCamera < 0.15) {
+        console.log("eating");
+        // play a sound
+        const audio = new Audio("/eat.mp3");
+        audio.play();
+        // set selectedObject to null
+        selectedObjectLeft.current = null;
+        selectedObjectRight.current = null;
+      }
+    } else if (!selectedObjectLeft.current && !selectedObjectRight.current) {
+      leftOffset = null;
+      rightOffset = null;
     }
   });
 
