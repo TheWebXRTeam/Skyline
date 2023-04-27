@@ -141,7 +141,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
     };
     g.hover = (d) => {
 
-      g.theta += d * 0.5;
+      g.theta += d *  0.5;
 
       let x = g.multichord(g.theta * g.period.x, 4, g.phase, g.wanderRadius);
       let y = g.multichord(g.theta * g.period.y, 4, g.phase, g.wanderRadius);
@@ -150,7 +150,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       x += g.initialPosition.x;
       y += g.initialPosition.y;
       z += g.initialPosition.z;
-
+      
       g.position.lerp(new Vector3(x, y, z), 0.1);
     };
 
@@ -228,7 +228,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
     g.disappear=()=>{
       g.scale.set(0,0,0)
       g.fadeIn = false
-      g.position.set(g.position.x,1000,g.position.z)
+      g.position.set(g.position.x,10,g.position.z)
     }
     g.runFade = ()=>{
         g.fade += 0.01
@@ -242,12 +242,13 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       
     }
     g.run = (d) => {
+      
       if (g.STATE == g.IDLE) {
         g.hover(d);
       } else if (g.STATE == g.HELD) {
         g.seek(d);
       } else if(g.STATE == g.DEAD){
-        if(Math.random() < 0.01){
+        if(Math.random() < 0.001){
           console.log("respawning")
           g.STATE = g.RESPAWNING
           g.initializePosition()
