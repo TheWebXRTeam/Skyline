@@ -76,9 +76,11 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
   const mixer = new AnimationMixer(butterfly);
   mixers.push(mixer);
 
-  console.log("animations", gltf.animations);
+  const clipActions = [];
+
   if (gltf.animations && gltf.animations.length > 0) {
     gltf.animations.forEach((animation) => {
+      clipActions.push(mixer.clipAction(animation));
       mixer.clipAction(animation).play();
       // add an offset to the animation
       mixer.clipAction(animation).time = MathUtils.randFloat(
@@ -87,6 +89,8 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       );
     });
   }
+  clipActions[0].paused = false;
+  clipActions[1].paused = true;
 
   //useframe to update the animation mixer (from @react-three/fiber)
   useFrame((state, delta) => {
@@ -208,12 +212,15 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       if (Math.random() > 0.001) return; 
 	
       if (g.atWall) {
-        console.log("go back..");
-        g.atWall = false;
-        mixer.timeScale = 1; // resume animation
-        g.wallTarget = null;
-        g.targetPosition = new Vector3(random(-2, 2), random(-0.25,0.25), random(-2, 2));
-            } else {
+	console.log("go back..");
+	g.atWall = false;
+
+	clipActions[0].paused = false;
+	clipActions[1].paused = true;
+
+	g.wallTarget = null;
+	g.targetPosition = new Vector3(random(-2, 2), random(-0.25,0.25), random(-2, 2));
+      } else {
 
         const ratk = scene.getObjectByName("ratk");
         if (!ratk) return;
@@ -346,7 +353,8 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
         // g.position.lerp(g.wallTarget, 0.02);
       if (g.wallTarget.distanceTo(g.position) < 0.1) {
         g.atWall = true;
-        mixer.timeScale = 0;
+        clipActions[0].paused = true;
+        clipActions[1].paused = false;
       }
       }
     };
