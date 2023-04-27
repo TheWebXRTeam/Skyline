@@ -4,7 +4,14 @@ import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Controllers, Hands, XR, useController, useXR } from "@react-three/xr";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import { AnimationMixer, Color, MathUtils, Mesh, Object3D, Vector3 } from "three";
+import {
+  AnimationMixer,
+  Color,
+  MathUtils,
+  Mesh,
+  Object3D,
+  Vector3,
+} from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { clone } from "three/examples/jsm/utils/SkeletonUtils";
 import { RatkScene } from "../components/RatkScene";
@@ -36,8 +43,17 @@ const App = () => {
         zIndex: 100000,
       }}
     >
-      <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 100000 }}>
-      <LoginForm />
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          zIndex: 100000,
+        }}
+      >
+        <LoginForm />
       </div>
       <XRScene
         sessionData={sessionData}
@@ -132,34 +148,34 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       g.position.lerp(new Vector3(x, y, z), 0.1);
     };
 
-    g.checkWalls = ()=>{
+    g.checkWalls = () => {
       const ratk = scene.getObjectByName("ratk");
-      if (!ratk) return			
+      if (!ratk) return;
       const planes = ratk.children as Object3D[];
-      if(planes.length <1)return
+      if (planes.length < 1) return;
 
       const planeIndex = Math.floor(Math.random() * planes.length);
 
       // ugly hack. sometimes the plane position is created, but matrixWorld is not updated yet. so skip
       const zeroPos = new Vector3(0, 0, 0);
       zeroPos.applyMatrix4(planes[planeIndex].matrixWorld);
-      if (zeroPos.x == 0 && zeroPos.y == 0 && zeroPos.z == 0) return; 
+      if (zeroPos.x == 0 && zeroPos.y == 0 && zeroPos.z == 0) return;
 
       // TODO: Forcing these so any so we can build but need to figure out why they are not there
       const planeHeight = (planes[planeIndex] as any).boundingRectangleHeight;
       const planeWidth = (planes[planeIndex] as any).boundingRectangleWidth;
 
-      console.log('planeHeight', planeHeight)
+      console.log("planeHeight", planeHeight);
 
-      const posX = Math.random() * planeWidth - planeWidth/2;
-      const posZ = Math.random() * planeHeight - planeHeight/2;
+      const posX = Math.random() * planeWidth - planeWidth / 2;
+      const posZ = Math.random() * planeHeight - planeHeight / 2;
 
       const pos = new Vector3(posX, 0, posZ);
 
       pos.applyMatrix4(planes[planeIndex].matrixWorld);
 
       g.wallTarget = new Vector3(pos.x, pos.y, pos.z);
-    }
+    };
 
     g.avoidCamera = (d) => {
       let gcamposition = new Vector3();
@@ -195,9 +211,9 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       g.cv.multiplyScalar(0.9);
     };
 
-    g.goToWall = (d)=>{
-      if(g.wallTarget) g.position.lerp(g.wallTarget,0.2 * d)
-    }
+    g.goToWall = (d) => {
+      if (g.wallTarget) g.position.lerp(g.wallTarget, 0.2 * d);
+    };
 
     g.seek = (d) => {
       g.position?.lerp(g.targetPosition, 0.2);
@@ -273,15 +289,15 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
             height={0.1}
             color={0x000000}
             textAlign={"center"}
-			outlineWidth={0.001}
-			outlineColor={0xffffff}
+            outlineWidth={0.001}
+            outlineColor={0xffffff}
           >
             {item?.post?.author?.displayName + ":\n" + item.post.record.text}
           </Text>
           <Text
             key={`${uniqueKey}-text2`}
             name={"likes"}
-            position={[-0.15, -0.2, 0]}  // TODO: might want to offset Z a bit
+            position={[-0.15, -0.2, 0]} // TODO: might want to offset Z a bit
             fontSize={0.03}
             maxWidth={0.4}
             lineHeight={1}
@@ -294,8 +310,8 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
             height={0.1}
             color={0x000000}
             textAlign={"center"}
-        outlineWidth={0.001}
-        outlineColor={0xffffff}
+            outlineWidth={0.001}
+            outlineColor={0xffffff}
           >
             {likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
           </Text>
@@ -304,7 +320,11 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
             scale={[0.07, 0.07, 0.07]}
             position={[0, 0, 0.04]}
           >
-            <meshStandardMaterial map={base64Texture} emissiveMap={base64Texture} emissive={new Color(0.2, 0.2, 0.5)} />
+            <meshStandardMaterial
+              map={base64Texture}
+              emissiveMap={base64Texture}
+              emissive={new Color(0.2, 0.2, 0.5)}
+            />
           </mesh>
         </>
       )}
@@ -333,13 +353,13 @@ const Butterflies = ({
       let bf = groups[i];
       bf.run(delta);
     }
-		const ratk = scene.getObjectByName("ratk");
-		if (!ratk) return;
+    const ratk = scene.getObjectByName("ratk");
+    if (!ratk) return;
 
-    const planes = ratk.children
-		if (planes.length === 0) return;
+    const planes = ratk.children;
+    if (planes.length === 0) return;
 
-    console.log('ratk planes: ', planes)
+    console.log("ratk planes: ", planes);
   });
 
   // load a gltf file to be used as geometry
@@ -363,7 +383,7 @@ const Butterflies = ({
   }
 
   let offset = null;
-  
+
   useFrame((state, delta) => {
     if (!leftController) return;
     if (!rightController) return;
@@ -373,47 +393,62 @@ const Butterflies = ({
       // Grabbing the same object
       if (selectedObjectLeft.current === selectedObjectRight.current) {
         selectedObjectLeft.current.grab();
-
       } else {
         // Grabbing different objects
-
-
       }
     }
     // one hand is grabbing
-    else if ((!selectedObjectLeft.current && selectedObjectRight.current) ||
+    else if (
+      (!selectedObjectLeft.current && selectedObjectRight.current) ||
       (selectedObjectLeft.current && !selectedObjectRight.current)
     ) {
-      console.log('one hand grabbing')
+      console.log("one hand grabbing");
       // one hand is grabbing
-      const grabbingHand = selectedObjectLeft.current ? leftController : rightController;
-      console.log('grabbingHand', grabbingHand)
-      const selectedObject = selectedObjectLeft.current || selectedObjectRight.current;
-      console.log('selectedObject', selectedObject)
+      const grabbingHand = selectedObjectLeft.current
+        ? leftController
+        : rightController;
+      console.log("grabbingHand", grabbingHand);
+      const selectedObject =
+        selectedObjectLeft.current || selectedObjectRight.current;
+      console.log("selectedObject", selectedObject);
       const grabbingHandPosition = grabbingHand.controller.position;
-      console.log('grabbingHandPosition', grabbingHandPosition)
+      console.log("grabbingHandPosition", grabbingHandPosition);
       // calculate the difference between the startGrabPosition and the object
-      if(!offset)
+      if (!offset)
         offset = grabbingHandPosition.clone().sub(selectedObject.position);
+      // check if selectedObjectLeft is a butterfly
+      if (selectedObjectLeft.current) {
+        console.log("left is butterfly", selectedObjectLeft.current);
+        // if so, set the target position to the grabbing hand position
+        selectedObjectLeft.current.userData.targetPosition =
+          grabbingHandPosition.clone();
+      }
+      /// check if selectedObjectRight is a butterfly
+      if (selectedObjectRight.current) {
+        console.log("right is butterfly", selectedObjectRight.current);
 
         selectedObject.position.copy(grabbingHandPosition.clone().sub(offset));
 
-
         // check for distance to camera for eating
-        const distanceToCamera = grabbingHandPosition.distanceTo(camera.position);
-        
+        const distanceToCamera = grabbingHandPosition.distanceTo(
+          camera.position
+        );
+
         if (distanceToCamera < 0.15) {
-          console.log('eating')
+          console.log("eating");
           // play a sound
-          const audio = new Audio('/eat.mp3');
+          const audio = new Audio("/eat.mp3");
           audio.play();
           // set selectedObject to null
           selectedObjectLeft.current = null;
           selectedObjectRight.current = null;
         }
-
-    } else if (!selectedObjectLeft.current && !selectedObjectRight.current) {
-      offset = null;
+      } else if (!selectedObjectLeft.current && !selectedObjectRight.current) {
+        offset = null;
+        // if so, set the target position to the grabbing hand position
+        selectedObjectRight.current.userData.targetPosition =
+          grabbingHandPosition.clone();
+      }
     }
   });
 
@@ -428,7 +463,7 @@ const Butterflies = ({
 
       if (inputSource.handedness === "left") {
         const nearestGroup = getGroup(leftController.controller.position);
-        if(!nearestGroup) return;
+        if (!nearestGroup) return;
         console.log("nearest group", nearestGroup);
         selectedObjectLeft.current = nearestGroup;
         lastLeftGroup = nearestGroup;
@@ -437,7 +472,7 @@ const Butterflies = ({
         });
       } else if (inputSource.handedness === "right") {
         const nearestGroup = getGroup(rightController.controller.position);
-        if(!nearestGroup) return;
+        if (!nearestGroup) return;
         console.log("nearest group", nearestGroup);
         selectedObjectRight.current = nearestGroup;
         lastRightGroup = nearestGroup;
