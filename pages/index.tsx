@@ -280,7 +280,7 @@ const Balls = ({
 		
 			g.run = (d)=>{
 				if(g.STATE == g.IDLE){
-					if(Math.random() < 0.01)g.checkWalls()
+					// if(Math.random() < 0.01)g.checkWalls()
 					g.hover(d)
 				}else if(g.STATE == g.HELD){
 					g.seek(d)
@@ -288,7 +288,7 @@ const Balls = ({
 				
 				}
 
-				g.goToWall(d)
+				// g.goToWall(d)
 				g.initialPosition.add(g.cv) //add centroid velocity
 				g.cv.multiplyScalar(0.9)
 		
