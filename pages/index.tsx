@@ -3,7 +3,6 @@ import { Text } from "@react-three/drei";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Controllers, Hands, XR, useController, useXR } from "@react-three/xr";
 import dynamic from "next/dynamic";
-import { RealityAccelerator } from "ratk";
 import { useEffect, useRef, useState } from "react";
 import { AnimationMixer, DoubleSide, MathUtils, Mesh, Vector3 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
@@ -18,9 +17,11 @@ const LoginForm = dynamic(() => import("../components/Login"), { ssr: false });
 
 const App = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [feedData, setFeedData] = useLocalStorage("feedData", null);
+  const [sessionData, setSessionData] = useState(null);
 
   return (
-    <>
+    <div>
       <ContainerBox
         ref={containerRef}
         style={{
@@ -36,9 +37,9 @@ const App = () => {
         }}
       >
         <LoginForm />
-        <XRScene />
+        <XRScene sessionData={sessionData} setSessionData={setSessionData} feedData={feedData} />
       </ContainerBox>
-    </>
+    </div>
   );
 };
 
@@ -58,7 +59,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
     });
   }
 
-  //useframe to update the animation mixer
+  //useframe to update the animation mixer (from @react-three/fiber)
   useFrame((state, delta) => {
     mixer.update(delta);
   });
@@ -256,8 +257,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
   );
 };
 
-const Butterflies = ({ selectedObjectRight, selectedObjectLeft }) => {
-  const [feedData, setFeedData] = useLocalStorage("feedData", null);
+const Butterflies = ({ feedData, selectedObjectRight, selectedObjectLeft }) => {
   const textures = useFeedDataTextures(feedData);
   const { session } = useXR();
 
@@ -311,54 +311,54 @@ const Butterflies = ({ selectedObjectRight, selectedObjectLeft }) => {
 
   useEffect(() => {
     if (!session) return;
-      let lastLeftGroup = null;
-      let lastRightGroup = null;
+    let lastLeftGroup = null;
+    let lastRightGroup = null;
 
-      session.addEventListener("selectstart", (event) => {
-        console.log("something selected", event);
-        const inputSource = event.inputSource;
+    session.addEventListener("selectstart", (event) => {
+      console.log("something selected", event);
+      const inputSource = event.inputSource;
 
-        if (inputSource.handedness === "left") {
-          const nearestGroup = getGroup(leftController.controller.position);
-          console.log("nearest group", nearestGroup);
-          selectedObjectLeft.current = nearestGroup;
-          lastLeftGroup = nearestGroup;
-          nearestGroup.children.forEach((child, i) => {
-            if (child.name?.includes("feed")) child.visible = true;
-          });
-        } else if (inputSource.handedness === "right") {
-          const nearestGroup = getGroup(rightController.controller.position);
-          console.log("nearest group", nearestGroup);
-          selectedObjectRight.current = nearestGroup;
-          lastRightGroup = nearestGroup;
-          nearestGroup.children.forEach((child, i) => {
-            if (child.name?.includes("feed")) child.visible = true;
-          });
-        }
+      if (inputSource.handedness === "left") {
+        const nearestGroup = getGroup(leftController.controller.position);
+        console.log("nearest group", nearestGroup);
+        selectedObjectLeft.current = nearestGroup;
+        lastLeftGroup = nearestGroup;
+        nearestGroup.children.forEach((child, i) => {
+          if (child.name?.includes("feed")) child.visible = true;
+        });
+      } else if (inputSource.handedness === "right") {
+        const nearestGroup = getGroup(rightController.controller.position);
+        console.log("nearest group", nearestGroup);
+        selectedObjectRight.current = nearestGroup;
+        lastRightGroup = nearestGroup;
+        nearestGroup.children.forEach((child, i) => {
+          if (child.name?.includes("feed")) child.visible = true;
+        });
+      }
 
-        //
-      });
+      //
+    });
 
-      session.addEventListener("selectend", (event) => {
-        const inputSource = event.inputSource;
+    session.addEventListener("selectend", (event) => {
+      const inputSource = event.inputSource;
 
-        if (inputSource.handedness === "left") {
-          console.log("left hand deselected");
-          selectedObjectLeft.current = null;
-          lastLeftGroup?.children.forEach((child, i) => {
-            if (child.name?.includes("feed")) child.visible = false;
-          });
-        } else if (inputSource.handedness === "right") {
-          console.log("left hand deselected");
-          selectedObjectRight.current = null;
+      if (inputSource.handedness === "left") {
+        console.log("left hand deselected");
+        selectedObjectLeft.current = null;
+        lastLeftGroup?.children.forEach((child, i) => {
+          if (child.name?.includes("feed")) child.visible = false;
+        });
+      } else if (inputSource.handedness === "right") {
+        console.log("left hand deselected");
+        selectedObjectRight.current = null;
 
-          lastRightGroup?.children.forEach((child, i) => {
-            if (child.name?.includes("feed")) child.visible = false;
-          });
-        }
+        lastRightGroup?.children.forEach((child, i) => {
+          if (child.name?.includes("feed")) child.visible = false;
+        });
+      }
 
-        //
-      });
+      //
+    });
   }, [session]);
 
   const butterflies = !feedData
@@ -378,9 +378,7 @@ const Butterflies = ({ selectedObjectRight, selectedObjectLeft }) => {
   return <>{butterflies}</>;
 };
 
-const XRScene = () => {
-  const [sessionData, setSessionData] = useState(null);
-
+const XRScene = ({feedData, sessionData, setSessionData}) => {
   const selectedObjectRight = useRef(null);
   const selectedObjectLeft = useRef(null);
 
@@ -406,11 +404,12 @@ const XRScene = () => {
           }}
         >
           <Hands />
-          <RatkScene />
+          {/* <RatkScene /> */}
           <Controllers />
           <directionalLight position={[1, 1, 1]} color={0xffffff} />
           {sessionData && (
             <Butterflies
+              feedData={feedData}
               selectedObjectLeft={selectedObjectLeft}
               selectedObjectRight={selectedObjectRight}
             />
