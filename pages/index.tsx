@@ -9,7 +9,6 @@ import { Text } from "@react-three/drei";
 import { RealityAccelerator } from "ratk";
 import { useEffect, useRef, useState } from "react";
 import { Mesh } from "three";
-// import next/dynamic and dynamically load LoginForm instead
 import dynamic from "next/dynamic";
 const LoginForm = dynamic(() => import("../components/Login"), { ssr: false });
 
