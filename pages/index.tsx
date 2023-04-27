@@ -131,7 +131,7 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
           selectedObjectLeft.current = nearestGroup;
 		  lastLeftGroup = nearestGroup
 		  nearestGroup.children.forEach((child, i) => {
-			if(i !== 0)
+			if(child.name?.includes('feed'))
 			child.visible = true;
 		});
 
@@ -141,7 +141,7 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
           selectedObjectRight.current = nearestGroup;
 			lastRightGroup = nearestGroup
 		  nearestGroup.children.forEach((child, i) => {
-			if(i !== 0)
+			if(child.name?.includes('feed'))
 			child.visible = true;
 		});
         }
@@ -156,7 +156,7 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
           console.log("left hand deselected");
           selectedObjectLeft.current = null;
 		  lastLeftGroup?.children.forEach((child, i) => {
-			if(i !== 0)
+			if(child.name?.includes('feed'))
 			child.visible = false;
 		});
         } else if (inputSource.handedness === "right") {
@@ -164,7 +164,7 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
           selectedObjectRight.current = null;
 
 		  lastRightGroup?.children.forEach((child, i) => {
-			if(i !== 0)
+			if(child.name?.includes('feed'))
 			child.visible = false;
 		});
         }
@@ -265,6 +265,7 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
               {!base64Texture ? null : (
                 <Text
                   key={`${uniqueKey}-text1`}
+				  name={'feed'}
                   position={[0.3, 0, 0]}
                   fontSize={0.03}
                   maxWidth={1}
@@ -272,8 +273,8 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
                   letterSpacing={0.02}
                   anchorX={2.3}
                   // @ts-ignore
-				  visible={false}
                   wrap={0.1}
+				  visible={false}
                   height={0.1}
                   color={0x000000}
                   textAlign={"left"}
@@ -291,9 +292,9 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
                 lineHeight={1}
                 letterSpacing={0.02}
                 anchorX={2.3}
-				visible={false}
                 // @ts-ignore
                 wrap={0.1}
+				visible={false}
                 height={0.1}
                 color={0x000000}
                 textAlign={"center"}
