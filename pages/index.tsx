@@ -603,8 +603,8 @@ const Butterflies = ({
 
       //
     };
-    session.addEventListener("pinchstart", selectStartListener);
-    session.addEventListener("pinchend", selectEndListener);
+    session.addEventListener("selectstart", selectStartListener);
+    session.addEventListener("selectend", selectEndListener);
 
     const ratk = scene.getObjectByName("ratk");
     if (!ratk) return;
@@ -613,8 +613,8 @@ const Butterflies = ({
     console.log("planes", planes);
 
     return () => {
-      session.removeEventListener("pinchstart", selectStartListener);
-      session.removeEventListener("pinchend", selectEndListener);
+      session.removeEventListener("selectstart", selectStartListener);
+      session.removeEventListener("selectend", selectEndListener);
     };
   }, [session]);
 
