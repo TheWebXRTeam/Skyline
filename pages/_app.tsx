@@ -1,5 +1,5 @@
 import MyMantineProvider from "../lib/Theme";
-import Layout from "../components/layouts/main";
+import Layout from "../components/Layout";
 import { GetServerSidePropsContext } from "next";
 import { getCookie } from "cookies-next";
 
