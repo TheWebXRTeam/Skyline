@@ -151,14 +151,16 @@ const Balls = ({
 			butterfly.animations = gltf.animations;
 
 			const groupRef = useRef(null) as any;
-
+		const {camera} = useThree()
 		useEffect(() => {
 			if (!groupRef.current) return;
 			let g = groupRef.current;
-			console.log("ggggggg", g);
+			// console.log("ggggggg", g);
 			groups.push(g);
 			// randomize the color of the butterfly
 			g.init = ()=>{
+				g.cv = new THREE.Vector3()
+				g.cam = camera
 				g.IDLE = 0
 				g.STATE = g.IDLE
 				g.position.set(random(-2,2),random(0.1,1),random(-2,2))
@@ -168,13 +170,6 @@ const Balls = ({
 				g.phase = random(0,TWO_PI)
 				g.theta = 0
 	
-				// groupRef.current.traverse((child) => {
-				// console.log('traversing', child)
-				// if (child instanceof Mesh) {
-				// 	// child.material.color.setHex(Math.random() * 0xffffff);
-				// 	//TODO randomize texture for diff bois
-				// }
-				// })
 			}
 			
 			g.init()
@@ -188,6 +183,8 @@ const Balls = ({
 				return val
 			}
 			g.hover = (d)=>{
+				g.avoidCamera(d)
+
 				g.theta += d*0.5
 	
 				let x = g.multichord(g.theta*g.period.x,4,g.phase,g.wanderRadius)
@@ -199,17 +196,43 @@ const Balls = ({
 				z += g.initialPosition.z
 	
 				
-				g.position.set(x,y,z)
+				g.position.lerp(new THREE.Vector3(x,y,z),0.1)
+			}
+
+			g.avoidCamera = (d)=>{
+				
+				let gcamposition = new THREE.Vector3()
+				g.cam.getWorldPosition(gcamposition)
+				gcamposition.sub(g.position)
+		
+				let theta = Math.atan2(gcamposition.x,gcamposition.z)
+				let dt = theta - g.rotation.y
+				if(dt > Math.PI) dt -= Math.PI*2
+				if(dt < Math.PI) dt += Math.PI*2
+				g.rotation.y += dt*0.01
+
+				let camdist = gcamposition.length()
+				let avoidDistance = 0.5
+				if (camdist < avoidDistance){
+					let camMix = 1-THREE.MathUtils.smoothstep(camdist,0,avoidDistance)
+					let headavoid = gcamposition.clone()
+					headavoid.multiply(new THREE.Vector3(1,0,1))
+					headavoid.normalize()
+					headavoid.multiplyScalar(camMix*-0.1*d)
+					g.cv.add(headavoid)
+				}
 			}
 		
 			g.run = (d)=>{
 				if(g.STATE == g.IDLE){
-				g.hover(d)
+					g.hover(d)
 				}else if(g.STATE == g.HELD){
-				g.seek(d)
+					g.seek(d)
 				}else{
 				
 				}
+				g.initialPosition.add(g.cv) //add centroid velocity
+				g.cv.multiplyScalar(0.9)
 		
 			}
 	
@@ -223,7 +246,7 @@ const Balls = ({
 			g.release= ()=>{
 				if(g.STATE == g.HELD)g.STATE = g.IDLE
 			}
-			g.setTarget = (t)=>{
+			g.setTarget = (t,openness)=>{
 				g.targetPosition = t
 				//TODO - care about handedness, add an offset to target based on where we should go (or else hands have an offset null and we target that offset null? many ways to skin)
 			}		
