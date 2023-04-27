@@ -1,21 +1,14 @@
 import { library } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import { faVrCardboard } from "@fortawesome/free-solid-svg-icons";
-import { Box as ContainerBox } from "@mantine/core";
-import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
-import {
-	Controllers,
-	Hands,
-	XR,
-	useXR
-} from "@react-three/xr";
+import { Controllers, Hands, XR, useController, useXR } from "@react-three/xr";
 import * as THREE from "three";
 
 import { Text } from "@react-three/drei";
 import { RealityAccelerator } from "ratk";
-import { RefObject, useEffect, useRef, useState } from "react";
-import { BackSide, Mesh } from "three";
+import { useEffect, useRef, useState } from "react";
+import { Mesh } from "three";
 // import next/dynamic and dynamically load LoginForm instead
 import dynamic from "next/dynamic";
 const LoginForm = dynamic(() => import("../components/Login"), { ssr: false });
@@ -80,7 +73,7 @@ const useFeedDataTextures = (feedData) => {
   return textures;
 };
 
-const Balls = () => {
+const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
   const [feedData, setFeedData] = useLocalStorage("feedData", null);
   const textures = useFeedDataTextures(feedData);
 
@@ -88,17 +81,74 @@ const Balls = () => {
 
   const { session } = useXR();
 
-  useEffect(() => {
-	console.log('session', session);
-	// add event listener for session
-	if (session) {
-		session.addEventListener('select', () => {
-			console.log("something selected")
-		});
-	}
+  const leftController = useController("left");
+  const rightController = useController("right");
 
+  const groups = [];
+
+  function getGroup(position) {
+    // get the group that is closest to the position
+    let closestGroup = null;
+    let closestDistance = 100000;
+    for (let i = 0; i < groups.length; i++) {
+      let bf = groups[i];
+      let distance = bf.position.distanceTo(position);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestGroup = bf;
+      }
+    }
+    return closestGroup;
+  }
+
+  useFrame((state, delta) => {
+    if (!leftController) return;
+    if (!rightController) return;
+
+    console.log("selectedObjectLeft.name", selectedObjectLeft.current?.name);
+
+    if (selectedObjectLeft.current && selectedObjectRight.current) {
+      if (selectedObjectLeft.current === selectedObjectRight.current) {
+        console.log("HANDLING GRAB", selectedObjectLeft.current);
+      }
+    }
+  });
+
+  useEffect(() => {
+    if (session) {
+      session.addEventListener("selectstart", (event) => {
+        console.log("something selected", event);
+        const inputSource = event.inputSource;
+
+        if (inputSource.handedness === "left") {
+          const nearestGroup = getGroup(leftController.controller.position);
+          console.log("nearest group", nearestGroup);
+          selectedObjectLeft.current = nearestGroup;
+        } else if (inputSource.handedness === "right") {
+          const nearestGroup = getGroup(rightController.controller.position);
+          console.log("nearest group", nearestGroup);
+          selectedObjectRight.current = nearestGroup;
+        }
+
+        //
+      });
+
+      session.addEventListener("selectend", (event) => {
+        const inputSource = event.inputSource;
+
+        if (inputSource.handedness === "left") {
+          console.log("left hand deselected");
+          selectedObjectLeft.current = null;
+        } else if (inputSource.handedness === "right") {
+          console.log("left hand deselected");
+          selectedObjectRight.current = null;
+        }
+
+        //
+      });
+    }
   }, [session]);
-  
+
   const ratkObject = new RealityAccelerator(gl.xr);
   scene.add(ratkObject.root);
 
@@ -106,25 +156,12 @@ const Balls = () => {
     ratkObject.update();
   });
 
-  const radius = 0.08;
-
   const random = (min, max) => Math.random() * (max - min) + min;
-
-  const groups = [];
-
-  useFrame((state, delta) => {
-    //GLOBAL tick update
-    for (let i = 0; i < groups.length; i++) {
-      let bf = groups[i];
-      bf.update();
-    }
-  });
 
   // load a gltf file to be used as geometry
   const gltf = useLoader(GLTFLoader, "butterfly.glb");
   const pfp = useLoader(GLTFLoader, "profilepic.glb");
   const mixers = [];
-  const clock = new THREE.Clock();
 
   const balls = !feedData
     ? []
@@ -179,64 +216,68 @@ const Balls = () => {
         return (
           <group
             key={uniqueKey}
+            ref={groupRef}
+            name={i + "-group"}
             position={[random(-2, 2), random(0.1, 1), random(-2, 2)]}
           >
             {/* add cube to the scene */}
-            <primitive
-              key={`${uniqueKey}-primitive`}
-              scale={[0.08, 0.08, 0.08]}
-              position={[0, 0, 0]}
-              object={butterfly}
-            />
-            {!base64Texture ? null : (
-              <>
-                {/* @ts-ignore */}
-                <Text
-                  key={`${uniqueKey}-text1`}
-                  position={[0.3, 0, 0]}
-                  fontSize={0.03}
-                  maxWidth={1}
-                  lineHeight={1}
-                  letterSpacing={0.02}
-                  anchorX={2.3}
-                  // @ts-ignore
-                  wrap={0.1}
-                  height={0.1}
-                  color={0x000000}
-                  textAlign={"left"}
-                >
-                  {item?.post?.author?.displayName +
-                    ": " +
-                    item.post.record.text}
-                </Text>
-                <Text
-                  key={`${uniqueKey}-text2`}
-                  position={[2, 0, 0]}
-                  fontSize={0.03}
-                  maxWidth={0.5}
-                  lineHeight={1}
-                  letterSpacing={0.02}
-                  anchorX={2.3}
-                  // @ts-ignore
-                  wrap={0.1}
-                  height={0.1}
-                  color={0x000000}
-                  textAlign={"center"}
-                >
-                  {likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
-                </Text>
-                <mesh
-                  geometry={pfpGeometry}
-                  scale={[0.07, 0.07, 0.07]}
-                  position={[0, 0, 0.04]}
-                >
-                  <meshStandardMaterial
-                    side={THREE.DoubleSide}
-                    map={base64Texture}
+            {selectedObjectLeft.current?.name === i + "-group" ||
+              (selectedObjectRight.current?.name === i + "-group" && (
+                <>
+                  <primitive
+                    key={`${uniqueKey}-primitive`}
+                    scale={[0.08, 0.08, 0.08]}
+                    position={[0, 0, 0]}
+                    object={butterfly}
                   />
-                </mesh>
-              </>
-            )}
+                  {!base64Texture ? null : (
+                    <Text
+                      key={`${uniqueKey}-text1`}
+                      position={[0.3, 0, 0]}
+                      fontSize={0.03}
+                      maxWidth={1}
+                      lineHeight={1}
+                      letterSpacing={0.02}
+                      anchorX={2.3}
+                      // @ts-ignore
+                      wrap={0.1}
+                      height={0.1}
+                      color={0x000000}
+                      textAlign={"left"}
+                    >
+                      {item?.post?.author?.displayName +
+                        ": " +
+                        item.post.record.text}
+                    </Text>
+                  )}
+                  <Text
+                    key={`${uniqueKey}-text2`}
+                    position={[2, 0, 0]}
+                    fontSize={0.03}
+                    maxWidth={0.5}
+                    lineHeight={1}
+                    letterSpacing={0.02}
+                    anchorX={2.3}
+                    // @ts-ignore
+                    wrap={0.1}
+                    height={0.1}
+                    color={0x000000}
+                    textAlign={"center"}
+                  >
+                    {likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
+                  </Text>
+                  <mesh
+                    geometry={pfpGeometry}
+                    scale={[0.07, 0.07, 0.07]}
+                    position={[0, 0, 0.04]}
+                  >
+                    <meshStandardMaterial
+                      side={THREE.DoubleSide}
+                      map={base64Texture}
+                    />
+                  </mesh>
+                </>
+              ))}
           </group>
         );
       });
@@ -245,36 +286,44 @@ const Balls = () => {
 };
 
 const App = () => {
-	const [sessionData, setSessionData] = useState(null);
+  const [sessionData, setSessionData] = useState(null);
+
+  const selectedObjectRight = useRef(null);
+  const selectedObjectLeft = useRef(null);
+
   return (
     <Layout title="Skyline">
-        <LoginForm />
-        <Canvas
-          style={{
-            position: "absolute",
-            zIndex: 9999,
+      <LoginForm />
+      <Canvas
+        style={{
+          position: "absolute",
+          zIndex: 9999,
+        }}
+        camera={{
+          fov: 50,
+          near: 0.1,
+          far: 100,
+          position: [0, 1.6, 3],
+        }}
+        gl={{ antialias: true }}
+      >
+        <XR
+          referenceSpace="local"
+          onSessionStart={(event) => {
+            setSessionData(true);
           }}
-          camera={{
-            fov: 50,
-            near: 0.1,
-            far: 100,
-            position: [0, 1.6, 3],
-          }}
-          gl={{ antialias: true }}
         >
-          <XR referenceSpace="local"
-		  	onSessionStart={(event) => {
-			setSessionData(true);
-		}}
-		  >
-            <Hands />
-            <Controllers />
-            <directionalLight position={[1, 1, 1]} color={0xffffff} />
-			{sessionData && 
-            <Balls />
-			}
-          </XR>
-        </Canvas>
+          <Hands />
+          <Controllers />
+          <directionalLight position={[1, 1, 1]} color={0xffffff} />
+          {sessionData && (
+            <Balls
+              selectedObjectLeft={selectedObjectLeft}
+              selectedObjectRight={selectedObjectRight}
+            />
+          )}
+        </XR>
+      </Canvas>
     </Layout>
   );
 };
