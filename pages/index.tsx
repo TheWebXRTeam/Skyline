@@ -110,16 +110,16 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
     if (selectedObjectLeft.current && selectedObjectRight.current) {
       if (selectedObjectLeft.current === selectedObjectRight.current) {
         console.log("HANDLING GRAB", selectedObjectLeft.current);
-		// selectedObjectLeft.current is a three.js group
-		// iterate through all children and set visible to true
+        // selectedObjectLeft.current is a three.js group
+        // iterate through all children and set visible to true
       }
     }
   });
 
   useEffect(() => {
     if (session) {
-		let lastLeftGroup = null;
-		let lastRightGroup = null;
+      let lastLeftGroup = null;
+      let lastRightGroup = null;
 
       session.addEventListener("selectstart", (event) => {
         console.log("something selected", event);
@@ -129,21 +129,18 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
           const nearestGroup = getGroup(leftController.controller.position);
           console.log("nearest group", nearestGroup);
           selectedObjectLeft.current = nearestGroup;
-		  lastLeftGroup = nearestGroup
-		  nearestGroup.children.forEach((child, i) => {
-			if(child.name?.includes('feed'))
-			child.visible = true;
-		});
-
+          lastLeftGroup = nearestGroup;
+          nearestGroup.children.forEach((child, i) => {
+            if (child.name?.includes("feed")) child.visible = true;
+          });
         } else if (inputSource.handedness === "right") {
           const nearestGroup = getGroup(rightController.controller.position);
           console.log("nearest group", nearestGroup);
           selectedObjectRight.current = nearestGroup;
-			lastRightGroup = nearestGroup
-		  nearestGroup.children.forEach((child, i) => {
-			if(child.name?.includes('feed'))
-			child.visible = true;
-		});
+          lastRightGroup = nearestGroup;
+          nearestGroup.children.forEach((child, i) => {
+            if (child.name?.includes("feed")) child.visible = true;
+          });
         }
 
         //
@@ -155,18 +152,16 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
         if (inputSource.handedness === "left") {
           console.log("left hand deselected");
           selectedObjectLeft.current = null;
-		  lastLeftGroup?.children.forEach((child, i) => {
-			if(child.name?.includes('feed'))
-			child.visible = false;
-		});
+          lastLeftGroup?.children.forEach((child, i) => {
+            if (child.name?.includes("feed")) child.visible = false;
+          });
         } else if (inputSource.handedness === "right") {
           console.log("left hand deselected");
           selectedObjectRight.current = null;
 
-		  lastRightGroup?.children.forEach((child, i) => {
-			if(child.name?.includes('feed'))
-			child.visible = false;
-		});
+          lastRightGroup?.children.forEach((child, i) => {
+            if (child.name?.includes("feed")) child.visible = false;
+          });
         }
 
         //
@@ -235,17 +230,17 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
         });
         const likeCount = item?.post?.likeCount;
         const pfpGeometry = (profilepic.children[0] as Mesh).geometry;
-		const pfpRef = useRef(null) as any;
+        const pfpRef = useRef(null) as any;
         const base64Texture = textures[i];
 
-		const { camera } = useThree();
+        const { camera } = useThree();
 
-		useFrame(() => {
-			if(pfpRef.current){
-				// the pfpRef should face the camera at all times
-				pfpRef.current.lookAt(camera.position)
-			}
-		})
+        useFrame(() => {
+          if (pfpRef.current) {
+            // the pfpRef should face the camera at all times
+            pfpRef.current.lookAt(camera.position);
+          }
+        });
 
         return (
           <group
@@ -265,7 +260,7 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
               {!base64Texture ? null : (
                 <Text
                   key={`${uniqueKey}-text1`}
-				  name={'feed'}
+                  name={"feed"}
                   position={[0.3, 0, 0]}
                   fontSize={0.03}
                   maxWidth={1}
@@ -274,7 +269,7 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
                   anchorX={2.3}
                   // @ts-ignore
                   wrap={0.1}
-				  visible={false}
+                  visible={false}
                   height={0.1}
                   color={0x000000}
                   textAlign={"left"}
@@ -294,7 +289,7 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
                 anchorX={2.3}
                 // @ts-ignore
                 wrap={0.1}
-				visible={false}
+                visible={false}
                 height={0.1}
                 color={0x000000}
                 textAlign={"center"}
@@ -305,7 +300,7 @@ const Balls = ({ selectedObjectRight, selectedObjectLeft }) => {
                 geometry={pfpGeometry}
                 scale={[0.07, 0.07, 0.07]}
                 position={[0, 0, 0.04]}
-				ref={pfpRef}
+                ref={pfpRef}
               >
                 <meshBasicMaterial
                   side={THREE.DoubleSide}
