@@ -328,64 +328,47 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
 			{!base64Texture ? null : (
 				<>
 					{/* @ts-ignore */}
-					<mesh
-						key={`${uniqueKey}-mesh`}
-						geometry={pfpGeometry}
-						position={[0, -0.4, -0.03]} // TODO: might want to offset Z a bit
-						name={"postparent"}
+					<Text
+						key={`${uniqueKey}-text1`}
+						name={"feed"}
+						position={[-0.15, -0.2, 0]} // TODO: might want to offset Z a bit
+						fontSize={0.03}
+						maxWidth={0.4}
+						lineHeight={1}
+						letterSpacing={0.02}
+						anchorX={0}
 						visible={false}
-						ref={pfpRef}
+						// @ts-ignore
+						wrap={0.1}
+						height={0.1}
+						color={0x000000}
+						textAlign={"center"}
+						outlineWidth={0.001}
+						outlineColor={0xffffff}
 					>
-						<meshBasicMaterial
-							key={`${uniqueKey}-material`}
-							color={0x000000}
-							transparent={true}
-						/>
-						<planeBufferGeometry
-							key={`${uniqueKey}-geometry`}
-							attach="geometry"
-							args={[0.8, 0.5]}
-						/>
-						<Text
-							key={`${uniqueKey}-text1`}
-							name={"feed"}
-							position={[-0.15, 0, .15]} // TODO: might want to offset Z a bit
-							fontSize={0.03}
-							maxWidth={0.4}
-							lineHeight={1.3}
-							letterSpacing={0.02}
-							anchorX={0}
-							// @ts-ignore
-							wrap={0.1}
-							height={0.1}
-							color={0xffffff}
-							textAlign={"center"}
-							outlineWidth={0.001}
-							outlineColor={0x000000}
-						>
-							{item?.post?.author?.displayName + ":\n" + item.post.record.text}
-						</Text>
-						<Text
-							key={`${uniqueKey}-text2`}
-							name={"likes"}
-							position={[1.5, 0, .15]} // TODO: might want to offset Z a bit
-							fontSize={0.03}
-							maxWidth={0.4}
-							lineHeight={1.3}
-							letterSpacing={0.02}
-							depthOffset={-1}
-							anchorX={0}
-							// @ts-ignore
-							wrap={0.1}
-							height={0.1}
-							color={0xffffff}
-							textAlign={"center"}
-							outlineWidth={0.001}
-							outlineColor={0x000000}
-						>
-							{likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
-						</Text>
-					</mesh>
+						{item?.post?.author?.displayName + ":\n" + item.post.record.text}
+					</Text>
+					<Text
+						key={`${uniqueKey}-text2`}
+						name={"likes"}
+						position={[-0.15, -0.2, 0]} // TODO: might want to offset Z a bit
+						fontSize={0.03}
+						maxWidth={0.4}
+						lineHeight={1}
+						letterSpacing={0.02}
+						depthOffset={-1}
+						anchorX={0}
+						visible={false}
+						// @ts-ignore
+						wrap={0.1}
+						height={0.1}
+						color={0x000000}
+						textAlign={"center"}
+						outlineWidth={0.001}
+						outlineColor={0xffffff}
+					>
+						{likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
+					</Text>
 					<mesh
 						geometry={pfpGeometry}
 						scale={[0.07, 0.07, 0.07]}
