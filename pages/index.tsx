@@ -118,16 +118,18 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       g.cv = new Vector3();
       g.cam = camera;
       g.IDLE = 0;
-      g.STATE = g.IDLE;
-      g.position.set(random(-2, 2), random(0.1, 1), random(-2, 2));
+      g.DEAD = 1;
+      g.HELD = 3;
+      g.RESPAWNING = 2;
+
+      g.STATE = g.DEAD
+      g.initializePosition()
       g.period = new Vector3(random(0, 1), random(0, 1), random(0, 1));
-      g.initialPosition = g.position.clone();
       g.wanderRadius = 0.1;
       g.phase = random(0, TWO_PI);
       g.theta = 0;
     };
 
-    g.init();
     g.multichord = (p, chords, offset, r) => {
       let val = Math.cos(p + offset) * r;
       for (let i = 0; i < chords; i++) {
@@ -138,7 +140,6 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       return val;
     };
     g.hover = (d) => {
-      g.avoidCamera(d);
 
       g.theta += d * 0.5;
 
@@ -181,7 +182,18 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
 
       g.wallTarget = new Vector3(pos.x, pos.y, pos.z);
     };
+    g.checkEaten = (distanceToCamera)=>{
+      if (distanceToCamera < 0.15) {
+        console.log("eating");
+        // play a sound
+        const audio = new Audio("/eat.mp3");
+        audio.play();
+        g.state = g.DEAD        
+        g.disappear()
+      }
 
+    }
+      
     g.avoidCamera = (d) => {
       let gcamposition = new Vector3();
       g.cam.getWorldPosition(gcamposition);
@@ -194,6 +206,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       g.rotation.y += dt * 0.01;
 
       let camdist = gcamposition.length();
+      g.checkEaten(camdist)
       let avoidDistance = 0.5;
       if (camdist < avoidDistance) {
         let camMix = 1 - MathUtils.smoothstep(camdist, 0, avoidDistance);
@@ -202,17 +215,50 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
         headavoid.normalize();
         headavoid.multiplyScalar(camMix * -0.1 * d);
         g.cv.add(headavoid);
-      }
-    };
+      } 
+    }; 
+    g.initializePosition = ()=>{
+      
+      g.position.set(random(-2, 2), random(0.1, 1), random(-2, 2));
+      g.scale.set(0,0,0)
+      g.initialPosition = g.position.clone();
+      g.fade = 0   
+    }
 
+    g.disappear=()=>{
+      g.scale.set(0,0,0)
+      g.fadeIn = false
+      g.position.set(g.position.x,1000,g.position.z)
+    }
+    g.runFade = ()=>{
+        g.fade += 0.01
+        if(g.fade > 1){
+          g.fade = 1
+          g.fadeIn = false
+          g.STATE = g.IDLE
+        }
+        let s = Math.max(0,g.fade)
+        g.scale.set(s,s,s) 
+      
+    }
     g.run = (d) => {
       if (g.STATE == g.IDLE) {
         g.hover(d);
       } else if (g.STATE == g.HELD) {
         g.seek(d);
-      } else {
+      } else if(g.STATE == g.DEAD){
+        if(Math.random() < 0.01){
+          console.log("respawning")
+          g.STATE = g.RESPAWNING
+          g.initializePosition()
+        }
+      } else if(g.STATE == g.RESPAWNING){
+        g.hover(d); 
+        g.runFade()
       }
-      g.initialPosition.add(g.cv); //add centroid velocity
+      g.avoidCamera(d);
+
+      if(g.STATE != g.HELD)g.initialPosition.add(g.cv); //add centroid velocity
       g.cv.multiplyScalar(0.9);
     };
 
@@ -221,7 +267,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
     };
 
     g.seek = (d) => {
-      g.position?.lerp(g.targetPosition, 0.2);
+      g.position?.lerp(g.targetPosition, 0.1);
     };
 
     g.grab = () => {
@@ -235,6 +281,8 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       g.targetPosition = t;
       //TODO - care about handedness, add an offset to target based on where we should go (or else hands have an offset null and we target that offset null? many ways to skin)
     };
+    
+    g.init();
   }, [textures]);
 
   profilepic.traverse((child) => {
@@ -480,41 +528,31 @@ const Butterflies = ({
 
       // check if selectedObjectLeft is a butterfly
       if (isLeftHand) {
-        selectedObjectLeft.current.targetPosition =
-          grabbingHandPosition.clone();
+        selectedObjectLeft.current.setTarget(grabbingHandPosition.clone(),0)
         // TODO: do we want this?
-        selectedObjectLeft.current.position.copy(
-          grabbingHandPosition
-            .clone()
-            .sub(isLeftHand ? leftOffset : rightOffset)
-        );
+        // selectedObjectLeft.current.position.copy(
+        //   grabbingHandPosition
+        //     .clone()
+        //     .sub(isLeftHand ? leftOffset : rightOffset)
+        // );
       }
       /// check if selectedObjectRight is a butterfly
       else {
         // if so, set the target position to the grabbing hand position
-        selectedObjectRight.current.targetPosition =
-          grabbingHandPosition.clone();
-
+        selectedObjectRight.current.setTarget(grabbingHandPosition.clone(),0)
         // TODO: do we want this?
-        selectedObjectRight.current.position.copy(
-          grabbingHandPosition
-            .clone()
-            .sub(isLeftHand ? leftOffset : rightOffset)
-        );
+
+        // selectedObjectRight
+        // selectedObjectRight.current.position.copy(
+        //   grabbingHandPosition
+        //     .clone()
+        //     .sub(isLeftHand ? leftOffset : rightOffset)
+        // );
       }
 
       // check for distance to camera for eating
       const distanceToCamera = grabbingHandPosition.distanceTo(camera.position);
 
-      if (distanceToCamera < 0.15) {
-        console.log("eating");
-        // play a sound
-        const audio = new Audio("/eat.mp3");
-        audio.play();
-        // set selectedObject to null
-        selectedObjectLeft.current = null;
-        selectedObjectRight.current = null;
-      }
     } else if (!selectedObjectLeft.current && !selectedObjectRight.current) {
       leftOffset = null;
       rightOffset = null;
