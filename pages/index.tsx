@@ -123,7 +123,24 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       g.phase = random(0, TWO_PI);
       g.theta = 0;
       
-      g.postParent = g.getObjectByName("postparent")
+      g.feedBackground = g.getObjectByName("looker")
+      g.postParent = g.getObjectByName("postParent")
+      g.feed = g.postParent.getObjectByName("feed")
+      g.feedBackground = g.postParent.getObjectByName("feedBackground")
+
+      let feedBB = g.feed.geometry.boundingBox
+      let feedwidth = Math.abs(feedBB.min.x-feedBB.max.x)
+      let feedheight =  Math.abs(feedBB.min.y-feedBB.max.y)
+      g.feedBackground.scale.set(feedwidth+0.1,feedheight+0.1,1)
+      g.feed.position.x = -feedwidth/2 
+
+      g.feedBackground.position.y = -feedheight/2
+      g.feed.position.y = -feedheight/2
+  
+      console.log(g.feed)
+      console.log(g.feedBackground)
+      console.log(g.feed)
+
       g.postParent.visible = true
       
     };
@@ -186,7 +203,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
         // play a sound
         const audio = new Audio("/eat.mp3");
         audio.play();
-        g.state = g.DEAD        
+        g.STATE = g.DEAD        
         g.disappear()
       }
 
@@ -318,7 +335,7 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
   useFrame(() => {
     if (pfpRef.current) {
       // the pfpRef should face the camera at all times
-      pfpRef.current.lookAt(camera.position);
+      // pfpRef.current.lookAt(camera.position);
     }
   });
 
@@ -339,64 +356,76 @@ const Butterfly = ({ groups, gltf, pfp, mixers, textures, item, i }) => {
       {!base64Texture ? null : (
         <>
           {/* @ts-ignore */}
-					<mesh
-						key={`${uniqueKey}-mesh`}
-						geometry={pfpGeometry}
-						position={[0, -0.4, -0.03]} // TODO: might want to offset Z a bit
-						name={"postparent"}
-						visible={false}
-						ref={pfpRef}
-					>
-						<meshBasicMaterial
-							key={`${uniqueKey}-material`}
-							color={0x000000}
-							transparent={true}
-						/>
-						<planeBufferGeometry
-							key={`${uniqueKey}-geometry`}
-							attach="geometry"
-							args={[0.8, 0.5]}
-						/>
-						<Text
-							key={`${uniqueKey}-text1`}
-							name={"feed"}
-							position={[-0.15, 0, .15]} // TODO: might want to offset Z a bit
-							fontSize={0.03}
-							maxWidth={0.4}
-							lineHeight={1.3}
-							letterSpacing={0.02}
-							anchorX={0}
-							// @ts-ignore
-							wrap={0.1}
-							height={0.1}
-							color={0xffffff}
-							textAlign={"center"}
-							outlineWidth={0.001}
-							outlineColor={0x000000}
-						>
-							{item?.post?.author?.displayName + ":\n" + item.post.record.text}
-						</Text>
-						<Text
-							key={`${uniqueKey}-text2`}
-							name={"likes"}
-							position={[1.5, 0, .15]} // TODO: might want to offset Z a bit
-							fontSize={0.03}
-							maxWidth={0.4}
-							lineHeight={1.3}
-							letterSpacing={0.02}
-							depthOffset={-1}
-							anchorX={0}
-							// @ts-ignore
-							wrap={0.1}
-							height={0.1}
-							color={0xffffff}
-							textAlign={"center"}
-							outlineWidth={0.001}
-							outlineColor={0x000000}
-						>
-							{likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
-						</Text>
-					</mesh>
+          <group
+          key={`${uniqueKey}-looker`}
+          name={"looker"}>            
+            <group          
+            position={[0, -0.2, -0.03]}
+            rotation={[-Math.PI/12,0,0]}
+            key={`${uniqueKey}-postParent`}
+            name={"postParent"}>
+              
+            <Text
+              key={`${uniqueKey}-text1`}
+              name={"feed"}
+              position={[0, 0, 0.005]} // TODO: might want to offset Z a bit
+
+              fontSize={0.03}
+              maxWidth={0.3}
+              lineHeight={1.3}
+              letterSpacing={0.02}
+              anchorX={0}
+              // @ts-ignore
+              wrap={0.1}
+              height={0.1}
+              color={0xffffff}
+              textAlign={"center"}
+              outlineWidth={0.001}
+              outlineColor={0x000000}
+            >
+              {item?.post?.author?.displayName + ":\n" + item.post.record.text}
+            </Text>
+            <Text
+              key={`${uniqueKey}-text2`}
+              name={"likes"}
+              position={[0,0,0]} // TODO: might want to offset Z a bit
+              fontSize={0.03}
+              maxWidth={0.4}
+              lineHeight={1.3}
+              letterSpacing={0.02}
+              depthOffset={-1}
+              anchorX={0}
+              // @ts-ignore
+              wrap={0.1}
+              height={0.1}
+              color={0xffffff}
+              textAlign={"center"}
+              outlineWidth={0.001}
+              outlineColor={0x000000}
+            >
+              {likeCount + "\n" + (likeCount === 1 ? "like" : "likes")}
+            </Text>
+
+            <mesh
+              key={`${uniqueKey}-mesh`}
+              geometry={pfpGeometry}// TODO: might want to offset Z a bit
+              name={"feedBackground"}
+              visible={true}
+              ref={pfpRef}
+            >
+              <meshBasicMaterial
+                key={`${uniqueKey}-material`}
+                color={0x000000}
+                transparent={true}
+              />
+              <planeBufferGeometry
+                key={`${uniqueKey}-geometry`}
+                attach="geometry"
+                args={[1, 1]}
+              />
+            </mesh>
+            </group>
+          </group>
           <mesh
             geometry={pfpGeometry}
             scale={[0.07, 0.07, 0.07]}
