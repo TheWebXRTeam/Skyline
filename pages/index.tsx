@@ -565,7 +565,7 @@ const Butterflies = ({
     if (selectedObjectLeft.current && selectedObjectRight.current) {
       // Grabbing the same object
       if (selectedObjectLeft.current === selectedObjectRight.current) {
-        selectedObjectLeft.current.grab();
+        // selectedObjectLeft.current.grab();
       } else {
         // Grabbing different objects
       }
